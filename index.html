@@ -8,6 +8,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .max-w-5xl { box-shadow: none; border: none; max-width: 100%; margin: 0; }
+            button { display: none !important; }
+            #food_examples_container { page-break-before: always; padding-top: 20px; margin-top: 0; }
+            .bg-blue-600 { background-color: #2563eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .text-white { color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            input[type="range"] { display: none; } /* ซ่อนแถบสไลด์ตอนพิมพ์ */
+            .shadow-sm, .shadow-xl { box-shadow: none !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 p-4 md:p-8">
@@ -89,7 +99,10 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <label class="font-semibold text-red-600">โปรตีน (Protein)</label>
-                                    <span id="val_pro_gkg" class="font-bold">1.0 g/kg</span>
+                                    <div class="text-right">
+                                        <span id="val_pro_gkg" class="font-bold">1.0 g/kg</span>
+                                        <span id="val_pro_pct" class="text-xs text-gray-500 ml-1">(0%)</span>
+                                    </div>
                                 </div>
                                 <input type="range" id="slide_pro" min="0.6" max="2.5" step="0.1" value="1.0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                                 <div class="text-right text-xs mt-1"><span id="out_pro_g" class="text-red-600 font-bold">0</span> กรัม (<span id="out_pro_kcal">0</span> kcal)</div>
@@ -154,7 +167,10 @@
                 </div>
             </section>
 
-            <div class="flex justify-end gap-4 pt-4 border-t">
+            <div class="flex flex-wrap justify-end gap-3 pt-4 border-t">
+                <button onclick="window.print()" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow flex items-center gap-2">
+                    🖨️ พิมพ์เอกสาร
+                </button>
                 <button onclick="showFoodExamples()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
                     ตัวอย่างอาหาร 1 ส่วน
                 </button>
@@ -173,7 +189,7 @@
             res_ibw: document.getElementById('res_ibw'), res_bmi: document.getElementById('res_bmi'), 
             res_bmr: document.getElementById('res_bmr'), res_tdee: document.getElementById('res_tdee'),
             bmi_desc: document.getElementById('bmi_desc'), goal_options: document.getElementById('goal_options'),
-            slide_pro: document.getElementById('slide_pro'), val_pro_gkg: document.getElementById('val_pro_gkg'),
+            slide_pro: document.getElementById('slide_pro'), val_pro_gkg: document.getElementById('val_pro_gkg'), val_pro_pct: document.getElementById('val_pro_pct'),
             out_pro_g: document.getElementById('out_pro_g'), out_pro_kcal: document.getElementById('out_pro_kcal'),
             slide_fat: document.getElementById('slide_fat'), val_fat_pct: document.getElementById('val_fat_pct'),
             out_fat_g: document.getElementById('out_fat_g'), out_fat_kcal: document.getElementById('out_fat_kcal'),
@@ -387,8 +403,14 @@
             els.val_pro_gkg.innerText = pro_gkg.toFixed(1) + ' g/kg';
             const pro_g = pro_gkg * w_kg;
             els.out_pro_g.innerText = Math.round(pro_g);
-            els.out_pro_kcal.innerText = Math.round(pro_g * 4);
+            
+            const pro_kcal = Math.round(pro_g * 4);
+            els.out_pro_kcal.innerText = pro_kcal;
             targetMacros.p = Math.round(pro_g);
+            
+            // Calculate Protein Percentage
+            const pro_pct = Math.round((pro_kcal / currentTargetKcal) * 100);
+            if (els.val_pro_pct) els.val_pro_pct.innerText = `(${pro_pct}%)`;
 
             const fat_pct = parseFloat(els.slide_fat.value);
             els.val_fat_pct.innerText = fat_pct + '%';
@@ -433,45 +455,49 @@
                 document.querySelector('.max-w-5xl > .p-6').appendChild(container);
             }
             
-            let html = '<h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">ตัวอย่างปริมาณอาหาร 1 ส่วน (เฉพาะหมวดที่คุณเลือก)</h2>';
+            let html = '<h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">ตัวอย่างปริมาณอาหาร 1 ส่วน (เฉพาะหมวดที่คุณเลือก)</h2>';
             html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
             
-            let currentCategory = "";
-            let currentListHtml = "";
-            let categoryMatches = false;
-            
+            // Group by category (new data3 format)
+            const grouped = {};
             for (let i = 0; i < globalFoodItems.length; i++) {
                 const item = globalFoodItems[i];
-                if (!item.name || item.name.trim() === "") {
-                    if (currentCategory !== "" && categoryMatches && currentListHtml !== "") {
-                        html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${currentCategory}</h3><ul class="text-sm space-y-2 text-gray-600">${currentListHtml}</ul></div>`;
-                    }
-                    
-                    currentCategory = item.category.trim();
-                    currentListHtml = "";
-                    categoryMatches = false;
-                    
-                    for (let j = 0; j < selectedGroups.length; j++) {
-                        const sel = selectedGroups[j].replace('สัตว์', '').replace('่', '').trim();
-                        const cat = currentCategory.toLowerCase().replace('สัตว์', '').replace('่', '').trim();
-                        if (cat.indexOf(sel) !== -1 || sel.indexOf(cat) !== -1 || (sel.indexOf('นม') !== -1 && cat.indexOf('นม') !== -1)) {
-                            categoryMatches = true;
-                            break;
-                        }
-                    }
-                } else {
-                    if (categoryMatches) {
-                        currentListHtml += `<li><span class="font-semibold text-gray-800">${item.category}</span> : <span class="text-blue-500">${item.name}</span></li>`;
+                if (!item.category) continue;
+                const cat = item.category.trim();
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(item);
+            }
+            
+            let hasMatch = false;
+
+            for (const cat in grouped) {
+                // Check if this category matches selected groups
+                let isSelected = false;
+                for (let j = 0; j < selectedGroups.length; j++) {
+                    const sel = selectedGroups[j].replace('สัตว์', '').replace('่', '').trim();
+                    const catClean = cat.toLowerCase().replace('สัตว์', '').replace('่', '').trim();
+                    if (catClean.indexOf(sel) !== -1 || sel.indexOf(catClean) !== -1 || (sel.indexOf('นม') !== -1 && catClean.indexOf('นม') !== -1)) {
+                        isSelected = true;
+                        break;
                     }
                 }
-            }
-            if (currentCategory !== "" && categoryMatches && currentListHtml !== "") {
-                html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${currentCategory}</h3><ul class="text-sm space-y-2 text-gray-600">${currentListHtml}</ul></div>`;
+
+                if (isSelected) {
+                    hasMatch = true;
+                    html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${cat}</h3><ul class="text-sm space-y-2 text-gray-600">`;
+                    for (let k = 0; k < grouped[cat].length; k++) {
+                        const food = grouped[cat][k];
+                        if (food.name) {
+                            html += `<li><span class="font-semibold text-gray-800">${food.name}</span> : <span class="text-blue-500">${food.amount}</span></li>`;
+                        }
+                    }
+                    html += `</ul></div>`;
+                }
             }
             
             html += '</div>';
             
-            if (html.indexOf('<div><h3') === -1) {
+            if (!hasMatch) {
                 html += '<p class="text-gray-500 text-sm">คุณยังไม่ได้เพิ่มจำนวนส่วนอาหาร หรือไม่พบตัวอย่างอาหารที่ตรงกับหมวดที่คุณเลือกครับ</p>';
             }
             
