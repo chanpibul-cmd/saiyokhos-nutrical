@@ -155,8 +155,8 @@
             </section>
 
             <div class="flex justify-end gap-4 pt-4 border-t">
-                <button onclick="fetchDataFromGAS()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
-                    ดึงเมนูอาหารจาก GAS
+                <button onclick="showFoodExamples()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
+                    ตัวอย่างอาหาร 1 ส่วน
                 </button>
                 <button onclick="sendToBackend()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition shadow-lg">
                     จัดตารางอาหารด้วย AI
@@ -187,6 +187,7 @@
 
         let currentTargetKcal = 0;
         let targetMacros = { c:0, p:0, f:0 };
+        let globalFoodItems = [];
 
         // ข้อมูล Food Exchange List อ้างอิงจาก test.xlsx
         const exchangeData = [
@@ -203,6 +204,46 @@
             { id: 'meat_high', name: 'เนื้อไขมันสูง', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 8, kcal: 100, val: 0 },
             { id: 'fat', name: 'ไขมัน', unit: 'ช้อนชา', c: 0, p: 0, f: 5, kcal: 45, val: 4 }
         ];
+
+        window.fetchDataFromGAS = async function() {
+            try {
+                const url = "https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec";
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                if(text.includes('Backend is running!')){
+                    console.warn('Backend GAS script not fully deployed.');
+                    return;
+                }
+                
+                const json = JSON.parse(text);
+                if (json.status === "success" && json.exchange_list && json.exchange_list.length > 0) {
+                    // Update global exchangeData
+                    exchangeData.length = 0; // clear old data
+                    for (let i = 0; i < json.exchange_list.length; i++) {
+                        const item = json.exchange_list[i];
+                        exchangeData.push({
+                            id: item.name,
+                            name: item.name,
+                            unit: item.unit,
+                            c: item.c,
+                            p: item.p,
+                            f: item.f,
+                            kcal: item.kcal,
+                            val: 0 // เริ่มต้นที่ 0 ส่วน
+                        });
+                    }
+                    
+                    initExchangeUI(); // Render หน้า UI ใหม่ด้วยข้อมูลจาก Google Sheets
+                    
+                    if (json.food_items && json.food_items.length > 0) {
+                        globalFoodItems = json.food_items;
+                    }
+                }
+            } catch(e) {
+                console.error("Error fetching GAS data:", e);
+            }
+        }
 
         function initExchangeUI() {
             els.exchange_list.innerHTML = '';
@@ -370,52 +411,73 @@
             calculateActualExchange();
         }
 
-        window.fetchDataFromGAS = async function() {
-            try {
-                const url = "https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec";
-                alert(`กำลังเชื่อมต่อไปยัง Google Sheets...`);
-                
-                const response = await fetch(url);
-                const text = await response.text();
-                
-                if(text.includes('Backend is running!')){
-                    alert('คุณยังไม่ได้นำโค้ดเวอร์ชันล่าสุดไปใส่ใน GAS กรุณาอัปเดตโค้ดและ Deploy ใหม่อีกครั้งครับ');
-                    return;
+        window.showFoodExamples = function() {
+            if (globalFoodItems.length === 0) {
+                alert("กำลังรอข้อมูลจาก Google Sheets... หรือไม่มีข้อมูล");
+                return;
+            }
+            
+            // หาหมวดอาหารที่ผู้ใช้เลือก (จำนวนส่วน > 0)
+            const selectedGroups = [];
+            for (let i = 0; i < exchangeData.length; i++) {
+                if (exchangeData[i].val > 0) {
+                    selectedGroups.push(exchangeData[i].name.toLowerCase().trim());
                 }
-                
-                const json = JSON.parse(text);
-                if (json.status === "success" && json.exchange_list && json.exchange_list.length > 0) {
-                    // Update global exchangeData
-                    exchangeData.length = 0; // clear old data
-                    for (let i = 0; i < json.exchange_list.length; i++) {
-                        const item = json.exchange_list[i];
-                        exchangeData.push({
-                            id: item.name,
-                            name: item.name,
-                            unit: item.unit,
-                            c: item.c,
-                            p: item.p,
-                            f: item.f,
-                            kcal: item.kcal,
-                            val: 0 // เริ่มต้นที่ 0 ส่วน
-                        });
+            }
+            
+            let container = document.getElementById('food_examples_container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'food_examples_container';
+                container.className = "mt-8 bg-white p-5 rounded-xl border border-gray-200 shadow-sm";
+                document.querySelector('.max-w-5xl > .p-6').appendChild(container);
+            }
+            
+            let html = '<h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">ตัวอย่างปริมาณอาหาร 1 ส่วน (เฉพาะหมวดที่คุณเลือก)</h2>';
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
+            
+            let currentCategory = "";
+            let currentListHtml = "";
+            let categoryMatches = false;
+            
+            for (let i = 0; i < globalFoodItems.length; i++) {
+                const item = globalFoodItems[i];
+                if (!item.name || item.name.trim() === "") {
+                    if (currentCategory !== "" && categoryMatches && currentListHtml !== "") {
+                        html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${currentCategory}</h3><ul class="text-sm space-y-2 text-gray-600">${currentListHtml}</ul></div>`;
                     }
                     
-                    initExchangeUI(); // Render หน้า UI ใหม่ด้วยข้อมูลจาก Google Sheets
-                    alert(`ดึงข้อมูลส่วนอาหาร (Exchange List) จาก Google Sheets จำนวน ${exchangeData.length} รายการสำเร็จ!`);
+                    currentCategory = item.category.trim();
+                    currentListHtml = "";
+                    categoryMatches = false;
                     
-                    if (json.food_items && json.food_items.length > 0) {
-                        console.log("รายการอาหารละเอียด (data3):", json.food_items);
+                    for (let j = 0; j < selectedGroups.length; j++) {
+                        const sel = selectedGroups[j].replace('สัตว์', '').replace('่', '').trim();
+                        const cat = currentCategory.toLowerCase().replace('สัตว์', '').replace('่', '').trim();
+                        if (cat.indexOf(sel) !== -1 || sel.indexOf(cat) !== -1 || (sel.indexOf('นม') !== -1 && cat.indexOf('นม') !== -1)) {
+                            categoryMatches = true;
+                            break;
+                        }
                     }
                 } else {
-                    alert("เชื่อมต่อสำเร็จ แต่ไม่พบข้อมูลใน Sheet 'data2' กรุณาตรวจสอบว่ามีข้อมูลและตั้งชื่อชีตถูกต้อง");
+                    if (categoryMatches) {
+                        currentListHtml += `<li><span class="font-semibold text-gray-800">${item.category}</span> : <span class="text-blue-500">${item.name}</span></li>`;
+                    }
                 }
-                
-            } catch(e) {
-                console.error(e);
-                alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + e.message);
             }
-        }
+            if (currentCategory !== "" && categoryMatches && currentListHtml !== "") {
+                html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${currentCategory}</h3><ul class="text-sm space-y-2 text-gray-600">${currentListHtml}</ul></div>`;
+            }
+            
+            html += '</div>';
+            
+            if (html.indexOf('<div><h3') === -1) {
+                html += '<p class="text-gray-500 text-sm">คุณยังไม่ได้เพิ่มจำนวนส่วนอาหาร หรือไม่พบตัวอย่างอาหารที่ตรงกับหมวดที่คุณเลือกครับ</p>';
+            }
+            
+            container.innerHTML = html;
+            container.scrollIntoView({ behavior: 'smooth' });
+        };
 
         const inputIds = ['gender', 'age', 'height', 'weight', 'activity'];
         for (let i = 0; i < inputIds.length; i++) {
@@ -424,6 +486,8 @@
         els.slide_pro.addEventListener('input', calculateMacros);
         els.slide_fat.addEventListener('input', calculateMacros);
 
+        // Fetch Data Silently On Load
+        fetchDataFromGAS();
         initExchangeUI();
         calculateBase();
         
