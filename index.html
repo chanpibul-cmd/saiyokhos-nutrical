@@ -320,9 +320,10 @@
 
         window.selectGoal = function(radio) {
             if (!radio) return;
-            document.querySelectorAll('input[name="goal"]').forEach(r => {
-                if (r.closest('label')) r.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-gray-200";
-            });
+            const radios = document.querySelectorAll('input[name="goal"]');
+            for (let i = 0; i < radios.length; i++) {
+                if (radios[i].closest('label')) radios[i].closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-gray-200";
+            }
             if (radio.closest('label')) {
                 radio.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-blue-500 bg-blue-50";
             }
