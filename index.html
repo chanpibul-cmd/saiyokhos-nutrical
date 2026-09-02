@@ -298,14 +298,28 @@
                 let bmr_ibw = els.gender.value === 'male' ? 66 + (13.7 * ibw) + (5 * els.height.value) - (6.8 * els.age.value) : 665 + (9.6 * ibw) + (1.8 * els.height.value) - (4.7 * els.age.value);
                 addOpt(bmr_ibw * els.activity.value, 'เป้าหมาย IBW', false);
             }
-            selectGoal(document.querySelector('input[name="goal"]:checked'));
+            
+            // ใช้ setTimeout เพื่อรอให้ DOM อัปเดตก่อน query
+            setTimeout(() => {
+                const checkedRadio = document.querySelector('input[name="goal"]:checked');
+                if (checkedRadio) selectGoal(checkedRadio);
+            }, 50);
         }
 
         window.selectGoal = function(radio) {
-            document.querySelectorAll('input[name="goal"]').forEach(r => r.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-gray-200");
-            radio.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-blue-500 bg-blue-50";
+            if (!radio) return;
+            document.querySelectorAll('input[name="goal"]').forEach(r => {
+                if (r.closest('label')) r.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-gray-200";
+            });
+            if (radio.closest('label')) {
+                radio.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-blue-500 bg-blue-50";
+            }
             currentTargetKcal = parseFloat(radio.value);
             calculateMacros();
+        };
+
+        window.sendToBackend = function() {
+            alert("ฟังก์ชันนี้เอาไว้เชื่อมต่อกับ LLM จัดตารางอาหารในอนาคตครับ!");
         };
 
         function calculateMacros() {
