@@ -109,7 +109,13 @@
                                 </div>
                                 <div class="text-right text-xs mt-1"><span id="out_carb_g" class="text-green-700 font-bold">0</span> กรัม (<span id="out_carb_kcal">0</span> kcal)</div>
                             </div>
-                            <div id="macro_warning" class="text-red-500 text-xs font-bold hidden">⚠️ พลังงานเกินเป้าหมาย!</div>
+                        </div>
+
+                        <!-- สรุปพลังงานเป้าหมายรวม -->
+                        <div class="mt-5 pt-3 border-t border-gray-200 text-center">
+                            <p class="text-gray-500 text-xs">พลังงานเป้าหมายทั้งหมดที่เลือก</p>
+                            <div class="text-2xl font-black text-gray-800" id="out_total_kcal">0 <span class="text-sm font-normal text-gray-500">kcal</span></div>
+                            <div id="macro_warning" class="text-red-500 text-xs font-bold mt-2 hidden">⚠️ พลังงานจากโปรตีน+ไขมัน เกินเป้าหมาย!</div>
                         </div>
                     </div>
                 </div>
@@ -172,6 +178,7 @@
             out_fat_g: document.getElementById('out_fat_g'), out_fat_kcal: document.getElementById('out_fat_kcal'),
             val_carb_pct: document.getElementById('val_carb_pct'), out_carb_g: document.getElementById('out_carb_g'),
             out_carb_kcal: document.getElementById('out_carb_kcal'), macro_warning: document.getElementById('macro_warning'),
+            out_total_kcal: document.getElementById('out_total_kcal'),
             exchange_list: document.getElementById('exchange_list'),
             act_carb: document.getElementById('act_carb'), act_pro: document.getElementById('act_pro'),
             act_fat: document.getElementById('act_fat'), act_kcal: document.getElementById('act_kcal')
@@ -315,6 +322,7 @@
                 radio.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-blue-500 bg-blue-50";
             }
             currentTargetKcal = parseFloat(radio.value);
+            if (els.out_total_kcal) els.out_total_kcal.innerHTML = `${Math.round(currentTargetKcal)} <span class="text-sm font-normal text-gray-500">kcal</span>`;
             calculateMacros();
         };
 
@@ -356,7 +364,7 @@
 
         window.fetchDataFromGAS = async function() {
             try {
-                const url = "https://script.google.com/macros/s/AKfycbxST8RR-vkQPAu_n_2-yE1j1OsyjytKWA5keDLBc_3QUsni7wET8sqG9svFwvO8lzNwiQ/exec";
+                const url = "https://script.google.com/macros/s/AKfycbzL5I_HBFwZr6IoonkL87G0O28SjdxJuK4HEZROtogeGCHeJ_2XW1QLXNs6zOeiHV9mnA/exec";
                 alert(`กำลังเชื่อมต่อไปยัง Google Sheets...`);
                 
                 const response = await fetch(url);
