@@ -15,7 +15,7 @@
             #food_examples_container { page-break-before: always; padding-top: 20px; margin-top: 0; }
             .bg-blue-600 { background-color: #2563eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .text-white { color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            input[type="range"] { display: none; } /* ซ่อนแถบสไลด์ตอนพิมพ์ */
+            input[type="range"] { display: none; }
             .shadow-sm, .shadow-xl { box-shadow: none !important; }
         }
     </style>
@@ -205,7 +205,7 @@
         let targetMacros = { c:0, p:0, f:0 };
         let globalFoodItems = [];
 
-        // ข้อมูล Food Exchange List อ้างอิงจาก test.xlsx
+        // ข้อมูล Food Exchange List เริ่มต้น
         const exchangeData = [
             { id: 'milk_skim', name: 'นมขาดมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 0, kcal: 80, val: 0 },
             { id: 'milk_lowfat', name: 'นมพร่องมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 5, kcal: 125, val: 0 },
@@ -234,7 +234,6 @@
                 
                 const json = JSON.parse(text);
                 if (json.status === "success" && json.exchange_list && json.exchange_list.length > 0) {
-                    // Update global exchangeData
                     exchangeData.length = 0; // clear old data
                     for (let i = 0; i < json.exchange_list.length; i++) {
                         const item = json.exchange_list[i];
@@ -250,7 +249,7 @@
                         });
                     }
                     
-                    initExchangeUI(); // Render หน้า UI ใหม่ด้วยข้อมูลจาก Google Sheets
+                    initExchangeUI(); 
                     
                     if (json.food_items && json.food_items.length > 0) {
                         globalFoodItems = json.food_items;
@@ -439,11 +438,12 @@
                 return;
             }
             
-            // หาหมวดอาหารที่ผู้ใช้เลือก (จำนวนส่วน > 0)
+            // หาหมวดอาหารที่ผู้ใช้เลือกแบบ Exact Match (จำนวนส่วน > 0)
             const selectedGroups = [];
             for (let i = 0; i < exchangeData.length; i++) {
                 if (exchangeData[i].val > 0) {
-                    selectedGroups.push(exchangeData[i].name.toLowerCase().trim());
+                    // ตัดคำว่า สัตว์ ออกเพื่อให้เหมือนกับ data3
+                    selectedGroups.push(exchangeData[i].name.replace('สัตว์', '').trim());
                 }
             }
             
@@ -471,24 +471,17 @@
             let hasMatch = false;
 
             for (const cat in grouped) {
-                // Check if this category matches selected groups
-                let isSelected = false;
-                for (let j = 0; j < selectedGroups.length; j++) {
-                    const sel = selectedGroups[j].replace('สัตว์', '').replace('่', '').trim();
-                    const catClean = cat.toLowerCase().replace('สัตว์', '').replace('่', '').trim();
-                    if (catClean.indexOf(sel) !== -1 || sel.indexOf(catClean) !== -1 || (sel.indexOf('นม') !== -1 && catClean.indexOf('นม') !== -1)) {
-                        isSelected = true;
-                        break;
-                    }
-                }
-
-                if (isSelected) {
+                // Check if this category matches selected groups exactly (100% Match)
+                const catClean = cat.replace('สัตว์', '').trim();
+                if (selectedGroups.indexOf(catClean) !== -1) {
                     hasMatch = true;
                     html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${cat}</h3><ul class="text-sm space-y-2 text-gray-600">`;
                     for (let k = 0; k < grouped[cat].length; k++) {
                         const food = grouped[cat][k];
                         if (food.name) {
-                            html += `<li><span class="font-semibold text-gray-800">${food.name}</span> : <span class="text-blue-500">${food.amount}</span></li>`;
+                            // แปลงขึ้นบรรทัดใหม่ \n ให้เป็น <br> (สำหรับหมวดผักยาวๆ)
+                            const amountHtml = food.amount ? String(food.amount).replace(/\n/g, '<br>') : '';
+                            html += `<li><span class="font-semibold text-gray-800">${food.name}</span> : <span class="text-blue-500">${amountHtml}</span></li>`;
                         }
                     }
                     html += `</ul></div>`;
