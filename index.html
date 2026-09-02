@@ -166,7 +166,8 @@
     </div>
 
     <script>
-        const els = {
+        try {
+            const els = {
             gender: document.getElementById('gender'), age: document.getElementById('age'),
             height: document.getElementById('height'), weight: document.getElementById('weight'), activity: document.getElementById('activity'),
             res_ibw: document.getElementById('res_ibw'), res_bmi: document.getElementById('res_bmi'), 
@@ -248,10 +249,13 @@
 
             // Highlight if diff > 10%
             const checkColor = (act, target, el) => {
-                if(target === 0) return;
+                if (!el) return;
+                if (target === 0) return;
                 const diff = Math.abs(act - target) / target;
-                if(diff > 0.1) el.classList.replace('text-green-600', 'text-red-500') || el.classList.replace('text-yellow-600', 'text-red-500');
-                else {
+                if(diff > 0.1) {
+                    el.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600');
+                    el.classList.add('text-red-500');
+                } else {
                     el.classList.remove('text-red-500');
                     if(el.id === 'act_carb') el.classList.add('text-green-600');
                     if(el.id === 'act_fat') el.classList.add('text-yellow-600');
@@ -266,6 +270,7 @@
 
         // Logic Calculator ...
         function calculateBase() {
+            if (!els.gender || !els.age || !els.height || !els.weight || !els.activity) return;
             const gender = els.gender.value;
             const age = parseFloat(els.age.value) || 0;
             const h_cm = parseFloat(els.height.value) || 0;
@@ -416,6 +421,11 @@
 
         initExchangeUI();
         calculateBase();
+        
+        } catch(err) {
+            alert("เกิดข้อผิดพลาดในสคริปต์: " + err.message + "\nLine: " + err.lineNumber);
+            console.error(err);
+        }
     </script>
 </body>
 </html>
