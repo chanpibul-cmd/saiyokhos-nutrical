@@ -360,13 +360,12 @@
             .then(data => console.log(data));
             */
 
-            // ตัวอย่างการส่งค่าไปที่ Google Apps Script
-            /*
-            fetch('YOUR_GAS_WEB_APP_URL', {
+         
+            fetch('https://script.google.com/macros/s/AKfycbzeVx1gBxfYU13jwVxhlYxPwN_Yo5VBOanFODrVGgcNHb8ZfHn1zy9nNMq6_UcqB9GORQ/exec', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
-            */
+            
             
             alert("บันทึกข้อมูลเรียบร้อย (เปิด Console เพื่อดู Data JSON)\nเมื่อเชื่อมกับ Backend แล้ว ข้อมูลนี้จะถูกส่งไปให้ LLM จัดตารางอาหารครับ!");
         }
