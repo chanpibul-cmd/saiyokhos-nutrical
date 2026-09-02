@@ -11,215 +11,271 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 p-4 md:p-8">
-    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
         <div class="bg-blue-600 p-6 text-white text-center">
-            <h1 class="text-2xl md:text-3xl font-bold">ระบบคำนวณพลังงานและสารอาหาร</h1>
-            <p class="opacity-80 mt-2">Deterministic Engine + Macro Distribution</p>
+            <h1 class="text-2xl md:text-3xl font-bold">ระบบคำนวณพลังงานและส่วนอาหาร (Food Exchange)</h1>
+            <p class="opacity-80 mt-2">Deterministic Engine + Macro Distribution + Portion Control</p>
         </div>
 
         <div class="p-6 md:p-8 space-y-8">
             <!-- ข้อมูลส่วนตัว -->
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">เพศ</label>
-                    <select id="gender" class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500">
+                    <select id="gender" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
                         <option value="male">ชาย</option>
                         <option value="female">หญิง</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">อายุ (ปี)</label>
-                    <input type="number" id="age" value="30" class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500">
+                    <input type="number" id="age" value="30" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ส่วนสูง (เซนติเมตร)</label>
-                    <input type="number" id="height" value="170" class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ส่วนสูง (ซม.)</label>
+                    <input type="number" id="height" value="170" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">น้ำหนักปัจจุบัน (กิโลกรัม)</label>
-                    <input type="number" id="weight" value="70" class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">น้ำหนัก (กก.)</label>
+                    <input type="number" id="weight" value="70" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div class="md:col-span-2">
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">กิจกรรม</label>
-                    <select id="activity" class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500">
-                        <option value="1.2">นั่งทำงานอยู่กับที่ และไม่ได้ออกกำลังกายเลย</option>
-                        <option value="1.375">ออกกำลังกายเบาๆ (1-3 วัน/สัปดาห์)</option>
-                        <option value="1.55">ออกกำลังกายปานกลาง (3-5 วัน/สัปดาห์)</option>
-                        <option value="1.725">ออกกำลังกายหนัก (6-7 วัน/สัปดาห์)</option>
-                        <option value="1.9">ออกกำลังกายหนักมาก (ทุกวันเช้า-เย็น)</option>
+                    <select id="activity" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                        <option value="1.2">ไม่ออกกำลังกาย</option>
+                        <option value="1.375">เบาๆ (1-3 วัน/สัปดาห์)</option>
+                        <option value="1.55">ปานกลาง (3-5 วัน)</option>
+                        <option value="1.725">หนัก (6-7 วัน)</option>
+                        <option value="1.9">หนักมาก (ทุกวัน)</option>
                     </select>
                 </div>
             </section>
 
-            <!-- ผลลัพธ์พื้นฐาน -->
-            <section class="bg-gray-100 p-6 rounded-xl border border-gray-200">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">ผลการประเมินร่างกายเบื้องต้น</h2>
+            <!-- ผลลัพธ์เบื้องต้น -->
+            <section class="bg-gray-100 p-4 rounded-xl border border-gray-200">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="text-sm text-gray-500">IBW (กก.)</div>
-                        <div id="res_ibw" class="text-xl font-bold text-blue-600">-</div>
+                    <div>
+                        <div class="text-xs text-gray-500">IBW (กก.)</div>
+                        <div id="res_ibw" class="text-lg font-bold text-blue-600">-</div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="text-sm text-gray-500">BMI</div>
-                        <div id="res_bmi" class="text-xl font-bold text-blue-600">-</div>
+                    <div>
+                        <div class="text-xs text-gray-500">BMI</div>
+                        <div id="res_bmi" class="text-lg font-bold text-blue-600">-</div>
+                        <div id="bmi_desc" class="text-[10px] text-gray-600 mt-1 h-8"></div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="text-sm text-gray-500">BMR (kcal)</div>
-                        <div id="res_bmr" class="text-xl font-bold text-blue-600">-</div>
+                    <div>
+                        <div class="text-xs text-gray-500">BMR (kcal)</div>
+                        <div id="res_bmr" class="text-lg font-bold text-blue-600">-</div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="text-sm text-gray-500">TDEE (kcal)</div>
-                        <div id="res_tdee" class="text-xl font-bold text-blue-600">-</div>
+                    <div>
+                        <div class="text-xs text-gray-500">TDEE (kcal)</div>
+                        <div id="res_tdee" class="text-lg font-bold text-blue-600">-</div>
                     </div>
-                </div>
-                <div id="bmi_desc" class="mt-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm text-center"></div>
-            </section>
-
-            <!-- เป้าหมายพลังงาน -->
-            <section class="border-l-4 border-blue-500 pl-4 py-2">
-                <h2 class="text-lg font-bold text-gray-800 mb-3">เลือกเป้าหมายพลังงาน (Target Calories)</h2>
-                <div class="flex flex-col md:flex-row gap-4" id="goal_options">
-                    <!-- สร้างจาก JS -->
                 </div>
             </section>
 
-            <!-- ปรับสัดส่วน Macro -->
-            <section class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">กำหนดสัดส่วนสารอาหารหลัก (Macronutrient Distribution)</h2>
-                
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- คอลัมน์ซ้าย: เป้าหมาย & สัดส่วน Macro -->
                 <div class="space-y-6">
-                    <!-- โปรตีน -->
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="font-semibold text-red-600">โปรตีน (Protein)</label>
-                            <span id="val_pro_gkg" class="text-sm font-bold bg-gray-100 px-2 py-1 rounded">1.0 g/kg</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mb-2">ทั่วไป 0.8-1.0 | ลดน้ำหนัก/ฟื้นฟู 1.2-1.5 | เพิ่มกล้ามเนื้อ 1.5-2.2 | โรคไต 0.6-0.8</p>
-                        <input type="range" id="slide_pro" min="0.6" max="2.5" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                        <div class="mt-2 text-right text-sm font-medium"><span id="out_pro_g" class="text-red-600 text-lg">0</span> กรัม (<span id="out_pro_kcal">0</span> kcal)</div>
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h2 class="text-md font-bold text-gray-800 mb-2">เป้าหมายพลังงาน (Target Kcal)</h2>
+                        <div class="flex flex-col gap-2" id="goal_options"></div>
                     </div>
 
-                    <!-- ไขมัน -->
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="font-semibold text-yellow-500">ไขมัน (Fat)</label>
-                            <span id="val_fat_pct" class="text-sm font-bold bg-gray-100 px-2 py-1 rounded">25 %</span>
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">1. สัดส่วนสารอาหารเป้าหมาย</h2>
+                        
+                        <div class="space-y-5">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <label class="font-semibold text-red-600">โปรตีน (Protein)</label>
+                                    <span id="val_pro_gkg" class="font-bold">1.0 g/kg</span>
+                                </div>
+                                <input type="range" id="slide_pro" min="0.6" max="2.5" step="0.1" value="1.0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <div class="text-right text-xs mt-1"><span id="out_pro_g" class="text-red-600 font-bold">0</span> กรัม (<span id="out_pro_kcal">0</span> kcal)</div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <label class="font-semibold text-yellow-500">ไขมัน (Fat)</label>
+                                    <span id="val_fat_pct" class="font-bold">25%</span>
+                                </div>
+                                <input type="range" id="slide_fat" min="20" max="30" step="1" value="25" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <div class="text-right text-xs mt-1"><span id="out_fat_g" class="text-yellow-600 font-bold">0</span> กรัม (<span id="out_fat_kcal">0</span> kcal)</div>
+                            </div>
+                            <div class="bg-green-50 p-2 rounded border border-green-100">
+                                <div class="flex justify-between text-sm">
+                                    <label class="font-semibold text-green-700">คาร์โบไฮเดรต (Carb)</label>
+                                    <span id="val_carb_pct" class="font-bold text-green-800">0%</span>
+                                </div>
+                                <div class="text-right text-xs mt-1"><span id="out_carb_g" class="text-green-700 font-bold">0</span> กรัม (<span id="out_carb_kcal">0</span> kcal)</div>
+                            </div>
+                            <div id="macro_warning" class="text-red-500 text-xs font-bold hidden">⚠️ พลังงานเกินเป้าหมาย!</div>
                         </div>
-                        <p class="text-xs text-gray-500 mb-2">20% - 30% ของพลังงานรวม</p>
-                        <input type="range" id="slide_fat" min="20" max="30" step="1" value="25" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                        <div class="mt-2 text-right text-sm font-medium"><span id="out_fat_g" class="text-yellow-600 text-lg">0</span> กรัม (<span id="out_fat_kcal">0</span> kcal)</div>
-                    </div>
-
-                    <!-- คาร์โบไฮเดรต -->
-                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="font-semibold text-green-700">คาร์โบไฮเดรต (Carbohydrate)</label>
-                            <span id="val_carb_pct" class="text-sm font-bold bg-green-100 px-2 py-1 rounded text-green-800">0 %</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mb-2">คำนวณอัตโนมัติจากพลังงานที่เหลือ</p>
-                        <div class="mt-2 text-right text-sm font-medium"><span id="out_carb_g" class="text-green-700 text-lg">0</span> กรัม (<span id="out_carb_kcal">0</span> kcal)</div>
                     </div>
                 </div>
 
-                <!-- สรุป -->
-                <div class="mt-6 pt-4 border-t border-gray-200 text-center">
-                    <p class="text-gray-500 text-sm">พลังงานเป้าหมายทั้งหมด</p>
-                    <div class="text-3xl font-black text-gray-800" id="out_total_kcal">0 <span class="text-lg font-normal">kcal</span></div>
-                    <div id="macro_warning" class="text-red-500 text-sm font-bold mt-2 hidden">⚠️ พลังงานจากโปรตีนและไขมันเกินเป้าหมายที่ตั้งไว้ โปรดปรับลด!</div>
+                <!-- คอลัมน์ขวา: การคำนวณส่วนอาหาร (Food Exchange) -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+                    <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">2. กำหนดส่วนอาหาร (Portion Control)</h2>
+                    <p class="text-xs text-gray-500 mb-4">ปรับจำนวนส่วน (ทัพพี, ช้อนโต๊ะ, แก้ว) ให้สารอาหารรวมใกล้เคียงเป้าหมายทางซ้ายมือ</p>
+                    
+                    <div class="space-y-3 flex-1 overflow-y-auto">
+                        <!-- รายการหมวดอาหาร (ดึงข้อมูลจาก GAS/Excel) -->
+                        <div id="exchange_list"></div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t bg-gray-50 rounded-lg p-3">
+                        <div class="text-xs font-bold text-gray-700 mb-2">สรุปสารอาหารจากการเลือกส่วน (คำนวณจริง)</div>
+                        <div class="grid grid-cols-4 gap-2 text-center text-sm">
+                            <div>
+                                <div class="text-gray-500 text-[10px]">คาร์บ (g)</div>
+                                <div id="act_carb" class="font-bold text-green-600">0</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 text-[10px]">โปรตีน (g)</div>
+                                <div id="act_pro" class="font-bold text-red-600">0</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 text-[10px]">ไขมัน (g)</div>
+                                <div id="act_fat" class="font-bold text-yellow-600">0</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 text-[10px]">พลังงาน</div>
+                                <div id="act_kcal" class="font-bold text-blue-600">0</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- ปุ่ม Action (เตรียมไว้ส่งไป Backend) -->
             <div class="flex justify-end gap-4 pt-4 border-t">
-                <button onclick="sendToBackend()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg">
-                    บันทึกข้อมูลและส่งให้ AI จัดตารางอาหาร
+                <button onclick="fetchDataFromGAS()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
+                    ดึงเมนูอาหารจาก GAS
+                </button>
+                <button onclick="sendToBackend()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition shadow-lg">
+                    จัดตารางอาหารด้วย AI
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // DOM Elements
         const els = {
-            gender: document.getElementById('gender'),
-            age: document.getElementById('age'),
-            height: document.getElementById('height'),
-            weight: document.getElementById('weight'),
-            activity: document.getElementById('activity'),
-            
-            res_ibw: document.getElementById('res_ibw'),
-            res_bmi: document.getElementById('res_bmi'),
-            res_bmr: document.getElementById('res_bmr'),
-            res_tdee: document.getElementById('res_tdee'),
-            bmi_desc: document.getElementById('bmi_desc'),
-            goal_options: document.getElementById('goal_options'),
-            
-            slide_pro: document.getElementById('slide_pro'),
-            val_pro_gkg: document.getElementById('val_pro_gkg'),
-            out_pro_g: document.getElementById('out_pro_g'),
-            out_pro_kcal: document.getElementById('out_pro_kcal'),
-
-            slide_fat: document.getElementById('slide_fat'),
-            val_fat_pct: document.getElementById('val_fat_pct'),
-            out_fat_g: document.getElementById('out_fat_g'),
-            out_fat_kcal: document.getElementById('out_fat_kcal'),
-
-            val_carb_pct: document.getElementById('val_carb_pct'),
-            out_carb_g: document.getElementById('out_carb_g'),
-            out_carb_kcal: document.getElementById('out_carb_kcal'),
-            
-            out_total_kcal: document.getElementById('out_total_kcal'),
-            macro_warning: document.getElementById('macro_warning')
+            gender: document.getElementById('gender'), age: document.getElementById('age'),
+            height: document.getElementById('height'), weight: document.getElementById('weight'), activity: document.getElementById('activity'),
+            res_ibw: document.getElementById('res_ibw'), res_bmi: document.getElementById('res_bmi'), 
+            res_bmr: document.getElementById('res_bmr'), res_tdee: document.getElementById('res_tdee'),
+            bmi_desc: document.getElementById('bmi_desc'), goal_options: document.getElementById('goal_options'),
+            slide_pro: document.getElementById('slide_pro'), val_pro_gkg: document.getElementById('val_pro_gkg'),
+            out_pro_g: document.getElementById('out_pro_g'), out_pro_kcal: document.getElementById('out_pro_kcal'),
+            slide_fat: document.getElementById('slide_fat'), val_fat_pct: document.getElementById('val_fat_pct'),
+            out_fat_g: document.getElementById('out_fat_g'), out_fat_kcal: document.getElementById('out_fat_kcal'),
+            val_carb_pct: document.getElementById('val_carb_pct'), out_carb_g: document.getElementById('out_carb_g'),
+            out_carb_kcal: document.getElementById('out_carb_kcal'), macro_warning: document.getElementById('macro_warning'),
+            exchange_list: document.getElementById('exchange_list'),
+            act_carb: document.getElementById('act_carb'), act_pro: document.getElementById('act_pro'),
+            act_fat: document.getElementById('act_fat'), act_kcal: document.getElementById('act_kcal')
         };
 
         let currentTargetKcal = 0;
+        let targetMacros = { c:0, p:0, f:0 };
 
+        // ข้อมูล Food Exchange List อ้างอิงจาก test.xlsx
+        const exchangeData = [
+            { id: 'milk_skim', name: 'นมขาดมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 0, kcal: 80, val: 0 },
+            { id: 'milk_lowfat', name: 'นมพร่องมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 5, kcal: 125, val: 0 },
+            { id: 'milk_whole', name: 'นมสด', unit: 'กล่อง', c: 12, p: 8, f: 8, kcal: 150, val: 0 },
+            { id: 'veg_a', name: 'ผัก ก', unit: 'ทัพพี', c: 0, p: 0, f: 0, kcal: 0, val: 0 },
+            { id: 'veg_b', name: 'ผัก ข', unit: 'ทัพพี', c: 5, p: 2, f: 0, kcal: 28, val: 3 },
+            { id: 'fruit', name: 'ผลไม้', unit: 'ส่วน', c: 15, p: 0, f: 0, kcal: 60, val: 3 },
+            { id: 'rice', name: 'ข้าวแป้ง', unit: 'ทัพพี', c: 18, p: 2, f: 0, kcal: 80, val: 6 },
+            { id: 'meat_lean', name: 'เนื้อไขมันต่ำมาก', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 1, kcal: 35, val: 4 },
+            { id: 'meat_low', name: 'เนื้อไขมันต่ำ', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 3, kcal: 55, val: 2 },
+            { id: 'meat_med', name: 'เนื้อไขมันปานกลาง', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 5, kcal: 75, val: 0 },
+            { id: 'meat_high', name: 'เนื้อไขมันสูง', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 8, kcal: 100, val: 0 },
+            { id: 'fat', name: 'ไขมัน', unit: 'ช้อนชา', c: 0, p: 0, f: 5, kcal: 45, val: 4 }
+        ];
+
+        function initExchangeUI() {
+            els.exchange_list.innerHTML = '';
+            exchangeData.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white border rounded p-2 text-sm";
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-bold text-gray-700">${item.name}</div>
+                        <div class="text-[10px] text-gray-400">C:${item.c} P:${item.p} F:${item.f} (${item.kcal} kcal) / 1 ${item.unit}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="updatePortion(${index}, -1)" class="w-6 h-6 bg-gray-200 rounded flex items-center justify-center font-bold text-gray-600 hover:bg-gray-300">-</button>
+                        <span class="w-6 text-center font-bold" id="val_ex_${index}">${item.val}</span>
+                        <button onclick="updatePortion(${index}, 1)" class="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center font-bold hover:bg-blue-200">+</button>
+                    </div>
+                `;
+                els.exchange_list.appendChild(div);
+            });
+            calculateActualExchange();
+        }
+
+        window.updatePortion = function(index, change) {
+            let newVal = exchangeData[index].val + change;
+            if (newVal < 0) newVal = 0;
+            exchangeData[index].val = newVal;
+            document.getElementById(`val_ex_${index}`).innerText = newVal;
+            calculateActualExchange();
+        };
+
+        function calculateActualExchange() {
+            let sumC = 0, sumP = 0, sumF = 0, sumKcal = 0;
+            exchangeData.forEach(item => {
+                sumC += item.c * item.val;
+                sumP += item.p * item.val;
+                sumF += item.f * item.val;
+                sumKcal += item.kcal * item.val;
+            });
+
+            els.act_carb.innerText = sumC;
+            els.act_pro.innerText = sumP;
+            els.act_fat.innerText = sumF;
+            els.act_kcal.innerText = sumKcal;
+
+            // Highlight if diff > 10%
+            const checkColor = (act, target, el) => {
+                if(target === 0) return;
+                const diff = Math.abs(act - target) / target;
+                if(diff > 0.1) el.classList.replace('text-green-600', 'text-red-500') || el.classList.replace('text-yellow-600', 'text-red-500');
+                else {
+                    el.classList.remove('text-red-500');
+                    if(el.id === 'act_carb') el.classList.add('text-green-600');
+                    if(el.id === 'act_fat') el.classList.add('text-yellow-600');
+                    if(el.id === 'act_pro') el.classList.add('text-red-600');
+                }
+            };
+            
+            checkColor(sumC, targetMacros.c, els.act_carb);
+            checkColor(sumP, targetMacros.p, els.act_pro);
+            checkColor(sumF, targetMacros.f, els.act_fat);
+        }
+
+        // Logic Calculator ...
         function calculateBase() {
             const gender = els.gender.value;
             const age = parseFloat(els.age.value) || 0;
             const h_cm = parseFloat(els.height.value) || 0;
             const w_kg = parseFloat(els.weight.value) || 0;
             const act = parseFloat(els.activity.value) || 1.2;
-
             if (h_cm === 0 || w_kg === 0 || age === 0) return;
 
-            // IBW
             const ibw = gender === 'male' ? h_cm - 100 : h_cm - 105;
             els.res_ibw.innerText = ibw.toFixed(1);
-
-            // BMI
-            const h_m = h_cm / 100;
-            const bmi = w_kg / (h_m * h_m);
+            const bmi = w_kg / Math.pow(h_cm / 100, 2);
             els.res_bmi.innerText = bmi.toFixed(1);
 
-            let bmiText = "";
-            let isOverweight = false;
-            if (bmi < 18.5) {
-                bmiText = "น้ำหนักต่ำกว่าเกณฑ์: มีภาวะเสี่ยงร่างกายขาดสารอาหาร อาจทำให้ร่างกายอ่อนเพลียง่าย ภูมิคุ้มกันบกพร่อง";
-            } else if (bmi <= 22.9) {
-                bmiText = "น้ำหนักสมส่วน: เป็นระดับเกณฑ์มาตรฐาน มีภาวะเสี่ยงต่อโรคแทรกซ้อนจากโรคอ้วนได้น้อยที่สุด";
-            } else if (bmi <= 24.9) {
-                bmiText = "น้ำหนักเกินมาตรฐาน: มีภาวะเสี่ยงเกิดโรคแทรกซ้อนจากโรคอ้วนได้";
-                isOverweight = true;
-            } else if (bmi <= 29.9) {
-                bmiText = "สภาวะ อ้วน (ระดับ 1): มีความเสี่ยงเกิดโรคแทรกซ้อนจากโรคอ้วนได้สูง";
-                isOverweight = true;
-            } else {
-                bmiText = "สภาวะ อ้วนมาก (ระดับ 2): มีความเสี่ยงเกิดโรคแทรกซ้อนจากโรคอ้วนได้สูงที่สุด ควรพบแพทย์เพื่อประเมิน";
-                isOverweight = true;
-            }
-            els.bmi_desc.innerText = bmiText;
+            let isOverweight = bmi > 22.9;
+            els.bmi_desc.innerText = bmi < 18.5 ? "ต่ำกว่าเกณฑ์" : bmi <= 22.9 ? "สมส่วน" : "อ้วน/เกินเกณฑ์";
 
-            // BMR
-            let bmr = 0;
-            if (gender === 'male') {
-                bmr = 66 + (13.7 * w_kg) + (5 * h_cm) - (6.8 * age);
-            } else {
-                bmr = 665 + (9.6 * w_kg) + (1.8 * h_cm) - (4.7 * age);
-            }
+            let bmr = gender === 'male' ? 66 + (13.7 * w_kg) + (5 * h_cm) - (6.8 * age) : 665 + (9.6 * w_kg) + (1.8 * h_cm) - (4.7 * age);
             els.res_bmr.innerText = Math.round(bmr);
-
-            // TDEE
             const tdee = bmr * act;
             els.res_tdee.innerText = Math.round(tdee);
 
@@ -227,159 +283,116 @@
         }
 
         function updateGoalOptions(tdee, ibw, isOverweight) {
-            // Options:
-            // 1. Maintain (TDEE)
-            // 2. Lose Weight (TDEE - 500)
-            // 3. IBW based (if overweight)
-            
             els.goal_options.innerHTML = '';
-            
-            const createRadio = (id, label, value, checked) => {
-                const div = document.createElement('div');
-                div.className = `flex-1 border rounded-lg p-3 cursor-pointer ${checked ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`;
-                div.innerHTML = `
-                    <label class="flex items-center cursor-pointer w-full h-full">
-                        <input type="radio" name="goal" value="${value}" class="mr-2" ${checked ? 'checked' : ''} onchange="selectGoal(this)">
-                        <div>
-                            <div class="font-bold">${label}</div>
-                            <div class="text-sm text-gray-500">${Math.round(value)} kcal</div>
-                        </div>
+            const addOpt = (val, label, checked) => {
+                els.goal_options.innerHTML += `
+                    <label class="flex items-center p-2 border rounded-lg cursor-pointer text-sm ${checked ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}">
+                        <input type="radio" name="goal" value="${val}" class="mr-2" ${checked ? 'checked' : ''} onchange="selectGoal(this)">
+                        ${label} (${Math.round(val)} kcal)
                     </label>
                 `;
-                return div;
             };
-
-            els.goal_options.appendChild(createRadio('goal_maintain', 'รักษาน้ำหนัก (TDEE)', tdee, !isOverweight));
-            els.goal_options.appendChild(createRadio('goal_lose', 'ลดน้ำหนัก (TDEE - 500)', tdee - 500, isOverweight));
-            
-            if (isOverweight) {
-                // Calculate TDEE using IBW instead of actual weight
-                const gender = els.gender.value;
-                const age = parseFloat(els.age.value) || 0;
-                const h_cm = parseFloat(els.height.value) || 0;
-                const act = parseFloat(els.activity.value) || 1.2;
-                let bmr_ibw = gender === 'male' 
-                    ? 66 + (13.7 * ibw) + (5 * h_cm) - (6.8 * age)
-                    : 665 + (9.6 * ibw) + (1.8 * h_cm) - (4.7 * age);
-                let tdee_ibw = bmr_ibw * act;
-                els.goal_options.appendChild(createRadio('goal_ibw', 'ลดแบบอ้างอิง IBW', tdee_ibw, false));
+            addOpt(tdee, 'รักษาน้ำหนัก', !isOverweight);
+            addOpt(tdee - 500, 'ลดน้ำหนัก (-500)', isOverweight);
+            if(isOverweight) {
+                let bmr_ibw = els.gender.value === 'male' ? 66 + (13.7 * ibw) + (5 * els.height.value) - (6.8 * els.age.value) : 665 + (9.6 * ibw) + (1.8 * els.height.value) - (4.7 * els.age.value);
+                addOpt(bmr_ibw * els.activity.value, 'เป้าหมาย IBW', false);
             }
-
-            // Trigger selection
-            const checked = document.querySelector('input[name="goal"]:checked');
-            if (checked) selectGoal(checked);
+            selectGoal(document.querySelector('input[name="goal"]:checked'));
         }
 
-        function selectGoal(radio) {
-            // Update styling
-            document.querySelectorAll('#goal_options > div').forEach(div => {
-                div.classList.remove('border-blue-500', 'bg-blue-50');
-                div.classList.add('border-gray-200');
-            });
-            radio.closest('div.border').classList.add('border-blue-500', 'bg-blue-50');
-            radio.closest('div.border').classList.remove('border-gray-200');
-
+        window.selectGoal = function(radio) {
+            document.querySelectorAll('input[name="goal"]').forEach(r => r.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-gray-200");
+            radio.closest('label').className = "flex items-center p-2 border rounded-lg cursor-pointer text-sm border-blue-500 bg-blue-50";
             currentTargetKcal = parseFloat(radio.value);
-            els.out_total_kcal.innerHTML = `${Math.round(currentTargetKcal)} <span class="text-lg font-normal">kcal</span>`;
-            
             calculateMacros();
-        }
+        };
 
         function calculateMacros() {
             if (currentTargetKcal <= 0) return;
-
             const w_kg = parseFloat(els.weight.value) || 0;
             
-            // Protein
             const pro_gkg = parseFloat(els.slide_pro.value);
             els.val_pro_gkg.innerText = pro_gkg.toFixed(1) + ' g/kg';
             const pro_g = pro_gkg * w_kg;
-            const pro_kcal = pro_g * 4;
             els.out_pro_g.innerText = Math.round(pro_g);
-            els.out_pro_kcal.innerText = Math.round(pro_kcal);
+            els.out_pro_kcal.innerText = Math.round(pro_g * 4);
+            targetMacros.p = Math.round(pro_g);
 
-            // Fat
             const fat_pct = parseFloat(els.slide_fat.value);
-            els.val_fat_pct.innerText = fat_pct + ' %';
+            els.val_fat_pct.innerText = fat_pct + '%';
             const fat_kcal = (fat_pct / 100) * currentTargetKcal;
-            const fat_g = fat_kcal / 9;
-            els.out_fat_g.innerText = Math.round(fat_g);
+            els.out_fat_g.innerText = Math.round(fat_kcal / 9);
             els.out_fat_kcal.innerText = Math.round(fat_kcal);
+            targetMacros.f = Math.round(fat_kcal / 9);
 
-            // Carbs
-            const carb_kcal = currentTargetKcal - pro_kcal - fat_kcal;
-            
+            const carb_kcal = currentTargetKcal - (pro_g * 4) - fat_kcal;
             if (carb_kcal < 0) {
-                els.out_carb_kcal.innerText = 0;
-                els.out_carb_g.innerText = 0;
-                els.val_carb_pct.innerText = '0 %';
                 els.macro_warning.classList.remove('hidden');
-                els.val_carb_pct.classList.replace('bg-green-100', 'bg-red-100');
-                els.val_carb_pct.classList.replace('text-green-800', 'text-red-800');
+                targetMacros.c = 0;
             } else {
-                const carb_g = carb_kcal / 4;
-                const carb_pct = (carb_kcal / currentTargetKcal) * 100;
-                els.out_carb_kcal.innerText = Math.round(carb_kcal);
-                els.out_carb_g.innerText = Math.round(carb_g);
-                els.val_carb_pct.innerText = Math.round(carb_pct) + ' %';
                 els.macro_warning.classList.add('hidden');
-                els.val_carb_pct.classList.replace('bg-red-100', 'bg-green-100');
-                els.val_carb_pct.classList.replace('text-red-800', 'text-green-800');
+                els.out_carb_kcal.innerText = Math.round(carb_kcal);
+                els.out_carb_g.innerText = Math.round(carb_kcal / 4);
+                els.val_carb_pct.innerText = Math.round((carb_kcal / currentTargetKcal) * 100) + '%';
+                targetMacros.c = Math.round(carb_kcal / 4);
+            }
+            calculateActualExchange();
+        }
+
+        window.fetchDataFromGAS = async function() {
+            try {
+                const url = "https://script.google.com/macros/s/AKfycbzeVx1gBxfYU13jwVxhlYxPwN_Yo5VBOanFODrVGgcNHb8ZfHn1zy9nNMq6_UcqB9GORQ/exec";
+                alert(`กำลังเชื่อมต่อไปยัง Google Sheets...`);
+                
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                if(text.includes('Backend is running!')){
+                    alert('คุณยังไม่ได้นำโค้ดเวอร์ชันล่าสุดไปใส่ใน GAS กรุณาอัปเดตโค้ดและ Deploy ใหม่อีกครั้งครับ');
+                    return;
+                }
+                
+                const json = JSON.parse(text);
+                if (json.status === "success" && json.exchange_list && json.exchange_list.length > 0) {
+                    // Update global exchangeData
+                    exchangeData.length = 0; // clear old data
+                    json.exchange_list.forEach(item => {
+                        exchangeData.push({
+                            id: item.name,
+                            name: item.name,
+                            unit: item.unit,
+                            c: item.c,
+                            p: item.p,
+                            f: item.f,
+                            kcal: item.kcal,
+                            val: 0 // เริ่มต้นที่ 0 ส่วน
+                        });
+                    });
+                    
+                    initExchangeUI(); // Render หน้า UI ใหม่ด้วยข้อมูลจาก Google Sheets
+                    alert(`ดึงข้อมูลส่วนอาหาร (Exchange List) จาก Google Sheets จำนวน ${exchangeData.length} รายการสำเร็จ!`);
+                    
+                    if (json.food_items && json.food_items.length > 0) {
+                        console.log("รายการอาหารละเอียด (data3):", json.food_items);
+                    }
+                } else {
+                    alert("เชื่อมต่อสำเร็จ แต่ไม่พบข้อมูลใน Sheet 'data2' กรุณาตรวจสอบว่ามีข้อมูลและตั้งชื่อชีตถูกต้อง");
+                }
+                
+            } catch(e) {
+                console.error(e);
+                alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + e.message);
             }
         }
 
-        function sendToBackend() {
-            // เตรียม JSON Data สำหรับส่งไปยัง PHP หรือ GAS
-            const data = {
-                gender: els.gender.value,
-                age: parseFloat(els.age.value),
-                height: parseFloat(els.height.value),
-                weight: parseFloat(els.weight.value),
-                activity: parseFloat(els.activity.value),
-                ibw: parseFloat(els.res_ibw.innerText),
-                bmi: parseFloat(els.res_bmi.innerText),
-                bmr: parseFloat(els.res_bmr.innerText),
-                tdee: parseFloat(els.res_tdee.innerText),
-                target_kcal: currentTargetKcal,
-                macros: {
-                    protein_g: parseFloat(els.out_pro_g.innerText),
-                    fat_g: parseFloat(els.out_fat_g.innerText),
-                    carb_g: parseFloat(els.out_carb_g.innerText)
-                }
-            };
-            console.log("Data ready to send:", data);
-            
-            // ตัวอย่างการ POST ค่าไปที่ PHP backend
-            /*
-            fetch('php_backend/api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(data => console.log(data));
-            */
-
-         
-            fetch('https://script.google.com/macros/s/AKfycbzeVx1gBxfYU13jwVxhlYxPwN_Yo5VBOanFODrVGgcNHb8ZfHn1zy9nNMq6_UcqB9GORQ/exec', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            
-            
-            alert("บันทึกข้อมูลเรียบร้อย (เปิด Console เพื่อดู Data JSON)\nเมื่อเชื่อมกับ Backend แล้ว ข้อมูลนี้จะถูกส่งไปให้ LLM จัดตารางอาหารครับ!");
-        }
-
-        // Event Listeners
         ['gender', 'age', 'height', 'weight', 'activity'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculateBase);
-            document.getElementById(id).addEventListener('change', calculateBase);
         });
-
         els.slide_pro.addEventListener('input', calculateMacros);
         els.slide_fat.addEventListener('input', calculateMacros);
 
-        // Initial Calculation
+        initExchangeUI();
         calculateBase();
     </script>
 </body>
