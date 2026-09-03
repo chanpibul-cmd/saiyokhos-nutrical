@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Nutrition Planner - Hybrid Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="foods_data.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
@@ -537,16 +538,22 @@
                 </div>
                 <!-- Category Filter Pills -->
                 <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs" id="food_category_pills">
-                    <button onclick="filterCategory('all', this)" class="cat-pill active px-3 py-1 rounded-full bg-indigo-600 text-white font-medium whitespace-nowrap">ทั้งหมด</button>
-                    <button onclick="filterCategory('11', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">อาหารปรุงสำเร็จ (11)</button>
-                    <button onclick="filterCategory('04', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ผัก (04)</button>
-                    <button onclick="filterCategory('05', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ผลไม้ (05)</button>
-                    <button onclick="filterCategory('06', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">เนื้อสัตว์ (06)</button>
-                    <button onclick="filterCategory('07', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ปลา/สัตว์น้ำ (07)</button>
-                    <button onclick="filterCategory('01', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ธัญพืช/ข้าว (01)</button>
-                    <button onclick="filterCategory('08', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ไข่ (08)</button>
-                    <button onclick="filterCategory('09', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">นม (09)</button>
-                    <button onclick="filterCategory('12', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ขนมหวาน (12)</button>
+                    <button onclick="filterCategory('all', this)" class="cat-pill active px-3 py-1 rounded-full bg-indigo-600 text-white font-medium whitespace-nowrap">ทั้งหมด (1,306)</button>
+                    <button onclick="filterCategory('01', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">01: ธัญพืช/ข้าว (50)</button>
+                    <button onclick="filterCategory('02', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">02: พืชหัว/ราก (23)</button>
+                    <button onclick="filterCategory('03', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">03: ถั่ว/เมล็ดพืช (39)</button>
+                    <button onclick="filterCategory('04', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">04: ผัก (265)</button>
+                    <button onclick="filterCategory('05', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">05: ผลไม้ (160)</button>
+                    <button onclick="filterCategory('06', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">06: เนื้อสัตว์ (65)</button>
+                    <button onclick="filterCategory('07', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">07: ปลา/สัตว์น้ำ (100)</button>
+                    <button onclick="filterCategory('08', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">08: ไข่ (19)</button>
+                    <button onclick="filterCategory('09', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">09: นม (38)</button>
+                    <button onclick="filterCategory('10', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">10: เครื่องเทศ/ปรุงรส (30)</button>
+                    <button onclick="filterCategory('11', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">11: อาหารปรุงสำเร็จ (234)</button>
+                    <button onclick="filterCategory('12', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">12: ขนมหวาน (120)</button>
+                    <button onclick="filterCategory('13', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">13: แมลง (13)</button>
+                    <button onclick="filterCategory('14', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">14: อื่นๆ (58)</button>
+                    <button onclick="filterCategory('Folate', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">Folate: อาหารโฟเลตสูง (92)</button>
                 </div>
 
                 <!-- Nutrient Sort & Filter Toolbar -->
@@ -679,7 +686,7 @@
             act_fat: document.getElementById('act_fat'), act_kcal: document.getElementById('act_kcal')
         };
 
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwXKTERhT49ksEyigtGqFNqhpobzC91BpBz7TjRrQKjDLax03XkixQxWztaPcBZTrrr_Q/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycby72ZAQfB4LKNlh4MPiRRCEkBLxcTkfOw5GrvE9BibTeoElFDw3AzmXlXDKCkdsVUNG7g/exec";
         let currentTargetKcal = 0;
         let targetMacros = { c:0, p:0, f:0 };
         let globalFoodItems = [];
@@ -840,20 +847,43 @@
         let currentNutrientSort = 'default';
         let myPlate = [];
 
+        function normalizeGid(val) {
+            if (val === undefined || val === null) return '';
+            const s = String(val).trim();
+            if (/^\d+$/.test(s)) {
+                return s.padStart(2, '0');
+            }
+            return s.toLowerCase();
+        }
+
         async function loadFoodsDatabase() {
             try {
-                // พยายามโหลด foods_data.json จาก local ก่อน
+                // 1. ตรวจสอบว่าโหลดผ่าน window.LOCAL_FOODS_DATA (จาก foods_data.js) สำเร็จแล้วหรือไม่
+                if (window.LOCAL_FOODS_DATA && Array.isArray(window.LOCAL_FOODS_DATA) && window.LOCAL_FOODS_DATA.length > 0) {
+                    allFoods1306 = window.LOCAL_FOODS_DATA;
+                    renderSearchResults();
+                    return;
+                }
+
+                // 2. พยายามโหลด foods_data.json
                 let resp = await fetch('foods_data.json');
                 if (resp.ok) {
                     allFoods1306 = await resp.json();
                 } else {
-                    // Fallback to Google Apps Script
+                    // 3. Fallback to Google Apps Script
                     let gasResp = await fetch(`${GAS_API_URL}?action=foods`);
                     let gasData = await gasResp.json();
                     if (gasData.foods) allFoods1306 = gasData.foods;
                 }
             } catch(e) {
-                console.warn("Cannot load foods_data.json:", e);
+                console.warn("Error loading local foods database, trying GAS fallback:", e);
+                try {
+                    let gasResp = await fetch(`${GAS_API_URL}?action=foods`);
+                    let gasData = await gasResp.json();
+                    if (gasData.foods) allFoods1306 = gasData.foods;
+                } catch(err2) {
+                    console.error("GAS fallback error:", err2);
+                }
             }
             renderSearchResults();
         }
@@ -901,16 +931,19 @@
             }
 
             let filtered = allFoods1306.filter(item => {
-                // filter category
-                if (currentCategoryFilter !== 'all' && item.gid !== currentCategoryFilter) {
-                    return false;
+                // filter category with robust normalization (handles 1, '1', '01', 'Folate', etc.)
+                if (currentCategoryFilter !== 'all') {
+                    if (normalizeGid(item.gid) !== normalizeGid(currentCategoryFilter)) {
+                        return false;
+                    }
                 }
                 // filter search query
                 if (currentSearchQuery) {
                     const matchName = item.name && item.name.toLowerCase().includes(currentSearchQuery);
-                    const matchEn = item.en && item.en.toLowerCase().includes(currentSearchQuery);
-                    const matchId = item.id && item.id.includes(currentSearchQuery);
-                    if (!matchName && !matchEn && !matchId) return false;
+                    const matchEn = (item.en || item.name_en) && (item.en || item.name_en).toLowerCase().includes(currentSearchQuery);
+                    const matchId = item.id && String(item.id).includes(currentSearchQuery);
+                    const matchGroup = item.group && item.group.toLowerCase().includes(currentSearchQuery);
+                    if (!matchName && !matchEn && !matchId && !matchGroup) return false;
                 }
                 return true;
             });
@@ -993,11 +1026,11 @@
                                 <span class="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">ID: ${f.id} | กลุ่ม ${f.gid}</span>
                             </div>
                             <div class="flex items-center gap-2.5 mt-1.5 text-xs flex-wrap">
-                                <span class="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">${f.kcal} kcal</span>
-                                <span class="text-green-700 font-medium">C: ${f.c}g</span>
-                                <span class="text-red-700 font-medium">P: ${f.p}g</span>
-                                <span class="text-yellow-700 font-medium">F: ${f.f}g</span>
-                                ${f.na ? `<span class="text-gray-500 text-[11px]">โซเดียม: ${f.na}mg</span>` : ''}
+                                <span class="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">${Math.abs(f.kcal || 0)} kcal</span>
+                                <span class="text-green-700 font-medium">C: ${Math.abs(f.c || 0)}g</span>
+                                <span class="text-red-700 font-medium">P: ${Math.abs(f.p || 0)}g</span>
+                                <span class="text-yellow-700 font-medium">F: ${Math.abs(f.f || 0)}g</span>
+                                ${f.na ? `<span class="text-gray-500 text-[11px]">โซเดียม: ${Math.abs(f.na)}mg</span>` : ''}
                                 <span class="text-gray-400 text-[10px]">ต่อ ${f.serving || '100g'}</span>
                             </div>
                             ${badges.length > 0 ? `
@@ -1040,8 +1073,8 @@
             const btnAdd = document.getElementById('nft_btn_add');
 
             title.innerText = food.name;
-            en.innerText = food.en || '';
-            group.innerText = `รหัสอาหาร: ${food.id} | กลุ่ม: ${food.gid}`;
+            en.innerText = food.en || food.name_en || '';
+            group.innerText = food.group ? `${food.group} (รหัส: ${food.id} | กลุ่ม ${food.gid})` : `รหัสอาหาร: ${food.id} | กลุ่ม: ${food.gid}`;
             btnAdd.onclick = () => {
                 addToMyPlate(food.id);
                 closeNutritionFactsModal();
@@ -1055,7 +1088,7 @@
                         <div class="text-[10px] text-gray-500">คุณค่าทางโภชนาการต่อ 100 กรัมของอาหาร</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xl font-black text-indigo-700">${food.kcal} kcal</div>
+                        <div class="text-xl font-black text-indigo-700">${Math.abs(food.kcal || 0)} kcal</div>
                         <div class="text-[10px] text-gray-500">พลังงานทั้งหมด</div>
                     </div>
                 </div>
@@ -1068,22 +1101,22 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                         <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
                             <div class="text-gray-400 text-[10px]">คาร์โบไฮเดรต</div>
-                            <div class="font-bold text-green-700">${food.c || 0} g</div>
-                            <div class="text-[9px] text-gray-400">น้ำตาล: ${food.sugar || 0}g / ใย: ${food.fiber || 0}g</div>
+                            <div class="font-bold text-green-700">${Math.abs(food.c || 0)} g</div>
+                            <div class="text-[9px] text-gray-400">น้ำตาล: ${Math.abs(food.sugar || 0)}g / ใย: ${Math.abs(food.fiber || 0)}g</div>
                         </div>
                         <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
                             <div class="text-gray-400 text-[10px]">โปรตีน</div>
-                            <div class="font-bold text-red-700">${food.p || 0} g</div>
+                            <div class="font-bold text-red-700">${Math.abs(food.p || 0)} g</div>
                         </div>
                         <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
                             <div class="text-gray-400 text-[10px]">ไขมัน</div>
-                            <div class="font-bold text-yellow-700">${food.f || 0} g</div>
-                            <div class="text-[9px] text-gray-400">คอเลสเตอรอล: ${food.chol || 0}mg</div>
+                            <div class="font-bold text-yellow-700">${Math.abs(food.f || 0)} g</div>
+                            <div class="text-[9px] text-gray-400">คอเลสเตอรอล: ${Math.abs(food.chol || 0)}mg</div>
                         </div>
                         <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
                             <div class="text-gray-400 text-[10px]">โซเดียม</div>
-                            <div class="font-bold text-gray-800">${food.na || 0} mg</div>
-                            <div class="text-[9px] text-gray-400">น้ำ: ${food.water || 0}g</div>
+                            <div class="font-bold text-gray-800">${Math.abs(food.na || 0)} mg</div>
+                            <div class="text-[9px] text-gray-400">น้ำ: ${Math.abs(food.water || 0)}g</div>
                         </div>
                     </div>
                 </div>
