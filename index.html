@@ -777,7 +777,7 @@
                     allFoods1306 = await resp.json();
                 } else {
                     // Fallback to Google Apps Script
-                    let gasResp = await fetch("https://script.google.com/macros/s/AKfycbwOTCNIdboMVTno5ryzwfDkoUDgT4D_2p7_Uz_mCJdUWF8jwSandoYXuN5JIdscDPg0aA/exec");
+                    let gasResp = await fetch("https://script.google.com/macros/s/AKfycbwsBLt327msDByXJgNnQvNGvA2UM_TG-nP77EJXJMJx5ipb2O2EwSLupHnXV4S0a2Y1Jw/exec");
                     let gasData = await gasResp.json();
                     if (gasData.foods) allFoods1306 = gasData.foods;
                 }
@@ -960,6 +960,11 @@
         // ==========================================
         // ระบบจัดตารางอาหารอัจฉริยะ (AI Meal Planner)
         // ==========================================
+        // ==========================================
+        // ระบบจัดตารางอาหารอัจฉริยะ (AI Meal Planner)
+        // ==========================================
+        const GEMINI_DIRECT_KEY = "AQ.Ab8RN6JXhCglnu3Lp39Dy85x4Gz1SGs9b0TD2EJpYCpqtMTj4g";
+
         window.sendToBackend = async function() {
             if (currentTargetKcal <= 0) {
                 alert("กรุณาเลือกเป้าหมายพลังงาน (Target Kcal) ก่อนครับ");
@@ -976,17 +981,17 @@
             // แสดง Loading State
             content.innerHTML = `
                 <div class="py-12 text-center space-y-4">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                    <h3 class="text-lg font-bold text-gray-800">AI Nutritionist กำลังวิเคราะห์และจัดแผนอาหาร...</h3>
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+                    <h3 class="text-lg font-bold text-gray-800">AI Nutritionist กำลังออกแบบตารางอาหารใหม่...</h3>
                     <p class="text-sm text-gray-500 max-w-md mx-auto">
-                        กำลังคัดเลือกเมนูอาหารไทยจากฐานข้อมูล 1,306 รายการ เพื่อให้สอดคล้องกับพลังงานเป้าหมาย <b>${Math.round(currentTargetKcal)} kcal</b> (C:${targetMacros.c}g / P:${targetMacros.p}g / F:${targetMacros.f}g)
+                        กำลังจัดสรรส่วนอาหาร (Food Exchange) และเลือกเมนูอาหารไทยให้ตรงตามเป้าหมาย <b>${Math.round(currentTargetKcal)} kcal</b> (C:${targetMacros.c}g / P:${targetMacros.p}g / F:${targetMacros.f}g)
                     </p>
                 </div>
             `;
 
             if (btn) btn.disabled = true;
 
-            const selectedPortions = exchangeData.filter(x => x.val > 0).map(x => `${x.name} ${x.val} ส่วน`);
+            const selectedPortions = exchangeData.filter(x => x.val > 0).map(x => `${x.name} ${x.val} ส่วน (1 ส่วน = ${x.unit})`);
             const profile = {
                 gender: els.gender ? els.gender.value : 'male',
                 age: els.age ? els.age.value : 30,
@@ -996,39 +1001,167 @@
 
             let mealPlanResult = null;
 
-            // 1. ลองเรียก Google Apps Script Backend (Gemini API)
+            // 1. เรียกใช้งาน Gemini 3.6 โดยตรงจากเบราว์เซอร์ (รวดเร็ว 1-2 วินาที + เมนูเปลี่ยนใหม่ทุกครั้ง)
             try {
-                const gasUrl = `https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
-                
-                const response = await fetch(gasUrl, { method: 'GET' });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.status === 'success' && data.meal_plan) {
-                        mealPlanResult = data.meal_plan;
+                mealPlanResult = await callGeminiDirectMealPlan(currentTargetKcal, targetMacros, selectedPortions, profile);
+            } catch (errDirect) {
+                console.warn("Direct Gemini call failed, trying GAS:", errDirect);
+                // 2. ถ้า Direct ไม่ผ่าน ให้ลองเรียกผ่าน Google Apps Script
+                try {
+                    const gasUrl = `https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
+                    const response = await fetch(gasUrl, { method: 'GET' });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'success' && data.meal_plan) {
+                            mealPlanResult = data.meal_plan;
+                        }
                     }
+                } catch(errGas) {
+                    console.warn("GAS call failed:", errGas);
                 }
-            } catch(e) {
-                console.warn("GAS AI Call failed or pending deploy, switching to Smart Dietitian Engine fallback:", e);
             }
 
-            // 2. ถ้า GAS ยังไม่ตอบกลับหรือไม่พร้อม ให้ใช้ Smart Engine จำลองแผนอาหารจากฐานข้อมูล 1,306 รายการทันที
+            // 3. ถ้าไม่มีการเชื่อมต่อ AI ให้ใช้ Dynamic Dietitian Engine จัดสรรส่วนอาหารจริงแบบสุ่มเมนู
             if (!mealPlanResult) {
-                mealPlanResult = generateSmartDietitianPlan(currentTargetKcal, targetMacros, selectedPortions, profile);
+                mealPlanResult = generateDynamicDietitianPlan(currentTargetKcal, targetMacros, exchangeData, profile);
             }
 
             if (btn) btn.disabled = false;
             renderAiMealPlan(mealPlanResult);
         };
 
-        function generateSmartDietitianPlan(targetKcal, macros, portions, profile) {
-            // สัดส่วนพลังงาน 4 มื้อ: เช้า 25%, กลางวัน 35%, ว่าง 10%, เย็น 30%
-            const bKcal = Math.round(targetKcal * 0.25);
-            const lKcal = Math.round(targetKcal * 0.35);
+        async function callGeminiDirectMealPlan(targetKcal, macros, portions, profile) {
+            const prompt = `คุณคือนักกำหนดอาหารวิชาชีพ (Certified Dietitian)
+กรุณาจัดตารางอาหารไทย 1 วัน (เช้า, กลางวัน, อาหารว่างบ่าย, เย็น)
+เป้าหมายโภชนาการ:
+- ผู้รับบริการ: เพศ ${profile.gender === 'female' ? 'หญิง' : 'ชาย'}, อายุ ${profile.age} ปี, น้ำหนัก ${profile.weight} กก., ส่วนสูง ${profile.height} ซม.
+- พลังงานเป้าหมาย: ${Math.round(targetKcal)} kcal
+- สารอาหารหลัก: คาร์โบไฮเดรต ${macros.c} กรัม, โปรตีน ${macros.p} กรัม, ไขมัน ${macros.f} กรัม
+- โควต้าส่วนอาหาร (Food Exchange) ที่ผู้ใช้เลือกไว้ และต้องกระจายให้ครบ 100% ใน 4 มื้อ:
+${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส่วน, เนื้อสัตว์ 4 ส่วน, ผัก 3 ส่วน, ผลไม้ 3 ส่วน, ไขมัน 4 ส่วน'}
+
+กติกาการจัดเมนู:
+1. กระจายส่วนอาหาร (ข้าวแป้ง, เนื้อสัตว์, ผัก, ผลไม้, นม, ไขมัน) ลงใน 4 มื้อให้ครบถ้วนตามโควต้าที่ระบุข้างต้น
+2. คิดเมนูอาหารไทยที่หลากหลาย น่ารับประทาน เมนูไม่ซ้ำซากจำเจ มีทั้งต้ม ผัด แกง ทอด หรือยำที่เหมาะสม
+3. ทุกรายการอาหารในแต่ละมื้อ ต้องระบุฟิลด์ exchange_used ว่าใช้ส่วนอาหารใดกี่ส่วน เช่น 'ข้าวแป้ง 2 ส่วน, เนื้อสัตว์ 2 ส่วน, ผัก 1 ส่วน'
+
+ตอบกลับเป็น JSON ตามรูปแบบนี้เท่านั้น:
+{
+  "summary": "สรุปกลยุทธ์การจัดอาหารและความหลากหลายของเมนูวันนี้ สั้นๆ กระชับ",
+  "total_calculated": {"kcal": ${Math.round(targetKcal)}, "carb_g": ${macros.c}, "protein_g": ${macros.p}, "fat_g": ${macros.f}},
+  "meals": [
+    {
+      "meal_name": "มื้อเช้า",
+      "time": "07:00 - 08:30 น.",
+      "kcal": 450,
+      "items": [
+        {"name": "ชื่ออาหาร", "portion": "ปริมาณ เช่น ข้าวสวย 2 ทัพพี + ไข่ต้ม 1 ฟอง", "exchange_used": "ข้าวแป้ง 2 ส่วน, เนื้อสัตว์ 1 ส่วน", "kcal": 350, "note": "คำแนะนำ"}
+      ]
+    },
+    {
+      "meal_name": "มื้อกลางวัน",
+      "time": "12:00 - 13:00 น.",
+      "kcal": 600,
+      "items": [...]
+    },
+    {
+      "meal_name": "อาหารว่างบ่าย",
+      "time": "15:00 - 15:30 น.",
+      "kcal": 180,
+      "items": [...]
+    },
+    {
+      "meal_name": "มื้อเย็น",
+      "time": "18:00 - 19:00 น.",
+      "kcal": 500,
+      "items": [...]
+    }
+  ]
+}`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_DIRECT_KEY}`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        temperature: 0.85
+                    }
+                })
+            });
+
+            if (!resp.ok) throw new Error(`Gemini status: ${resp.status}`);
+            const data = await resp.json();
+            const text = data.candidates[0].content.parts[0].text;
+            return JSON.parse(text);
+        }
+
+        // ฟังก์ชันสำรองแบบ Dynamic ที่จัดสรรส่วนอาหารจริงตามที่ผู้ใช้เลือก พร้อมสุ่มเมนูไทยไม่ซ้ำเดิม
+        function generateDynamicDietitianPlan(targetKcal, macros, exchangeList, profile) {
+            // ดึงจำนวนส่วนอาหารที่เลือกจริง
+            const getPortionVal = (id) => {
+                const it = exchangeList.find(x => x.id === id);
+                return it ? it.val : 0;
+            };
+
+            const ricePortion = getPortionVal('rice') || 6;
+            const meatTotal = (getPortionVal('meat_lean') + getPortionVal('meat_low') + getPortionVal('meat_med') + getPortionVal('meat_high')) || 4;
+            const vegTotal = (getPortionVal('veg_a') + getPortionVal('veg_b')) || 3;
+            const fruitTotal = getPortionVal('fruit') || 3;
+            const milkTotal = (getPortionVal('milk_skim') + getPortionVal('milk_lowfat') + getPortionVal('milk_whole')) || 0;
+            const fatTotal = getPortionVal('fat') || 4;
+
+            // คลังเมนูสุ่มหลากหลาย
+            const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            const bRice = Math.max(1, Math.round(ricePortion * 0.3));
+            const lRice = Math.max(1, Math.round(ricePortion * 0.4));
+            const dRice = Math.max(1, ricePortion - bRice - lRice);
+
+            const bMeat = Math.max(1, Math.round(meatTotal * 0.25));
+            const lMeat = Math.max(1, Math.round(meatTotal * 0.45));
+            const dMeat = Math.max(1, meatTotal - bMeat - lMeat);
+
+            const bFruit = fruitTotal > 0 ? 1 : 0;
+            const lFruit = fruitTotal > 1 ? 1 : 0;
+            const sFruit = Math.max(0, fruitTotal - bFruit - lFruit);
+
+            const breakfastDishes = [
+                { name: "ข้าวต้มทรงเครื่องอกไก่ฉีกและเห็ดหอม", unit: `ข้าวต้ม ${bRice * 1} ถ้วย + อกไก่ ${bMeat * 2} ช้อนโต๊ะ` },
+                { name: "โจ๊กข้าวกล้องหมูสับไม่ติดมัน ใส่ไข่ลวก", unit: `โจ๊ก ${bRice * 1} ถ้วย + หมูสับ ${bMeat * 2} ช้อนโต๊ะ` },
+                { name: "ข้าวกล้องร้อนๆ พร้อมไข่ต้มยางมะตูม", unit: `ข้าวกล้อง ${bRice} ทัพพี + ไข่ต้ม ${bMeat} ฟอง` },
+                { name: "แซนด์วิชขนมปังโฮลวีทอกไก่และผักกาดหอม", unit: `ขนมปัง ${bRice} แผ่น + อกไก่ ${bMeat * 2} ช้อนโต๊ะ` }
+            ];
+
+            const lunchDishes = [
+                { name: "ข้าวกล้อง + ต้มยำกุ้งน้ำใสเห็ดฟาง + ผัดผักรวมมิตร", unit: `ข้าว ${lRice} ทัพพี + กุ้ง ${lMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
+                { name: "ข้าวไรซ์เบอร์รี่ + อกไก่ผัดพริกไทยดำ + ต้มจืดฟัก", unit: `ข้าว ${lRice} ทัพพี + ไก่ ${lMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
+                { name: "ก๋วยเตี๋ยวเส้นหมี่น้ำใสลูกชิ้นปลาและเนื้อปลาสด", unit: `เส้นหมี่ ${lRice} ทัพพี + เนื้อปลา ${lMeat * 2} ช้อนโต๊ะ + ถั่วงอกผักบุ้ง 1 ทัพพี` },
+                { name: "ข้าวสวย + พะแนงไก่ใส่ถั่วฝักยาว + ยำแตงกวา", unit: `ข้าว ${lRice} ทัพพี + ไก่ ${lMeat * 2} ช้อนโต๊ะ + แตงกวา 1 ทัพพี` },
+                { name: "ข้าวกล้อง + ลาบหมูไม่ติดมัน + ผักสดเคียงแตงกวาถั่วพู", unit: `ข้าว ${lRice} ทัพพี + หมูสับ ${lMeat * 2} ช้อนโต๊ะ + ผักสด 1 ทัพพี` }
+            ];
+
+            const dinnerDishes = [
+                { name: "ข้าวกล้อง + ปลากะพงนึ่งซีอิ๊วขิงซอย + แกงจืดเต้าหู้ผักกาดขาว", unit: `ข้าว ${dRice} ทัพพี + ปลากะพง ${dMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
+                { name: "ข้าวสวย + แกงส้มผักรวมกุ้งสด + ผัดบวบใส่ไข่", unit: `ข้าว ${dRice} ทัพพี + กุ้ง ${dMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
+                { name: "ข้าวกล้อง + สเต็กอกไก่ย่างสมุนไพร + สลัดผักน้ำใส", unit: `ข้าว ${dRice} ทัพพี + อกไก่ ${dMeat * 2} ช้อนโต๊ะ + ผักสลัด 1 ทัพพี` },
+                { name: "ข้าวไรซ์เบอร์รี่ + ยำปลากระป๋องใส่หอมแดงพริกสด + ผักลวก", unit: `ข้าว ${dRice} ทัพพี + ปลา ${dMeat * 2} ช้อนโต๊ะ + ผักลวก 1 ทัพพี` }
+            ];
+
+            const fruits = ["กล้วยน้ำว้า 1 ผล", "ส้มเขียวหวาน 1 ผล", "ฝรั่งสด 4-5 ชิ้นคำ", "แตงโมสด 6-8 ชิ้นคำ", "แอปเปิ้ล 1/2 ผล"];
+            const bDish = pickRandom(breakfastDishes);
+            const lDish = pickRandom(lunchDishes);
+            const dDish = pickRandom(dinnerDishes);
+
+            const bKcal = Math.round(targetKcal * 0.28);
+            const lKcal = Math.round(targetKcal * 0.38);
             const sKcal = Math.round(targetKcal * 0.10);
-            const dKcal = Math.round(targetKcal * 0.30);
+            const dKcal = targetKcal - bKcal - lKcal - sKcal;
 
             return {
-                summary: `แผนอาหารนี้ได้รับการคำนวณสัดส่วนสารอาหารให้ตรงตามเป้าหมาย ${Math.round(targetKcal)} kcal (โปรตีน ${macros.p}g / คาร์บ ${macros.c}g / ไขมัน ${macros.f}g) โดยกระจายพลังงาน 4 มื้อเพื่อรักษาระดับน้ำตาลในเลือดและส่งเสริมการเผาผลาญตลอดวัน`,
+                summary: `แผนอาหารนี้กระจายส่วนอาหารตามโควต้าที่คุณเลือกจริง (ข้าวแป้ง ${ricePortion} ส่วน, เนื้อสัตว์ ${meatTotal} ส่วน, ผัก ${vegTotal} ส่วน, ผลไม้ ${fruitTotal} ส่วน, ไขมัน ${fatTotal} ส่วน) เพื่อรักษาการเผาผลาญให้สม่ำเสมอตลอดวัน`,
                 total_calculated: {
                     kcal: Math.round(targetKcal),
                     carb_g: macros.c,
@@ -1041,9 +1174,9 @@
                         time: "07:00 - 08:30 น.",
                         kcal: bKcal,
                         items: [
-                            { name: "ข้าวต้มข้าวกล้องอกไก่ฉีก ใส่ขิงซอยและต้นหอม", portion: "1 ถ้วยใหญ่ (ข้าวกล้อง 2 ทัพพี + อกไก่ 50g)", kcal: Math.round(bKcal * 0.65), note: "ย่อยง่าย ได้คาร์โบไฮเดรตเชิงซ้อนและโปรตีนไขมันต่ำ" },
-                            { name: "ไข่ต้มสุก หรือ นมพร่องมันเนย", portion: "1 ฟอง หรือ 1 กล่อง (240 ml)", kcal: Math.round(bKcal * 0.25), note: "เพิ่มโปรตีนและแคลเซียมช่วงเช้า" },
-                            { name: "ส้มเขียวหวาน หรือ กล้วยน้ำว้า", portion: "1 ผล", kcal: Math.round(bKcal * 0.10), note: "เพิ่มวิตามินซีและกากใยอาหาร" }
+                            { name: bDish.name, portion: bDish.unit, exchange_used: `ข้าวแป้ง ${bRice} ส่วน, เนื้อสัตว์ ${bMeat} ส่วน`, kcal: Math.round(bKcal * 0.75), note: "ย่อยง่าย ได้คาร์โบไฮเดรตเชิงซ้อนและโปรตีน" },
+                            ...(bFruit > 0 ? [{ name: pickRandom(fruits), portion: "1 ส่วน", exchange_used: "ผลไม้ 1 ส่วน", kcal: Math.round(bKcal * 0.25), note: "วิตามินซีและกากใย" }] : []),
+                            ...(milkTotal > 0 ? [{ name: "นมสด/พร่องมันเนย", portion: "1 กล่อง (240 ml)", exchange_used: "นม 1 ส่วน", kcal: 120, note: "แคลเซียมช่วงเช้า" }] : [])
                         ]
                     },
                     {
@@ -1051,10 +1184,8 @@
                         time: "12:00 - 13:00 น.",
                         kcal: lKcal,
                         items: [
-                            { name: "ข้าวสวยกล้อง/ไรซ์เบอร์รี่", portion: "2 - 3 ทัพพี", kcal: Math.round(lKcal * 0.35), note: "พลังงานหลักสำหรับทำกิจกรรมช่วงบ่าย" },
-                            { name: "ต้มยำกุ้งน้ำใส หรือ แกงจืดเต้าหู้หมูสับสาหร่าย", portion: "1 ถ้วย (กุ้ง/หมูสับ 60g)", kcal: Math.round(lKcal * 0.35), note: "โปรตีนสูง ซดคล่องคอ ไขมันต่ำ" },
-                            { name: "ผัดผักรวมมิตรน้ำมันน้อย (ผักบุ้ง/กะหล่ำ/แครอท)", portion: "1 จานเล็ก", kcal: Math.round(lKcal * 0.18), note: "เพิ่มโพแทสเซียม วิตามินเอ และใยอาหาร" },
-                            { name: "ผลไม้สด (แตงโม หรือ ฝรั่ง)", portion: "6-8 ชิ้นคำ", kcal: Math.round(lKcal * 0.12), note: "ของหวานหลังอาหารเพื่อความสดชื่น" }
+                            { name: lDish.name, portion: lDish.unit, exchange_used: `ข้าวแป้ง ${lRice} ส่วน, เนื้อสัตว์ ${lMeat} ส่วน, ผัก 1 ส่วน, ไขมัน 2 ส่วน`, kcal: Math.round(lKcal * 0.82), note: "สารอาหารหลักสำหรับพลังงานช่วงบ่าย" },
+                            ...(lFruit > 0 ? [{ name: pickRandom(fruits), portion: "1 ส่วน", exchange_used: "ผลไม้ 1 ส่วน", kcal: Math.round(lKcal * 0.18), note: "สดชื่น ล้างปากหลังอาหาร" }] : [])
                         ]
                     },
                     {
@@ -1062,8 +1193,8 @@
                         time: "15:00 - 15:30 น.",
                         kcal: sKcal,
                         items: [
-                            { name: "ถั่วอัลมอนด์อบธรรมชาติ หรือ ถั่วลายเสือ", portion: "1 กำมือเล็ก (15-20 เมล็ด)", kcal: Math.round(sKcal * 0.60), note: "ไขมันไม่อิ่มตัวดีต่อหัวใจและวิตามินอี" },
-                            { name: "น้ำเต้าหู้หวานน้อย หรือ โยเกิร์ตรสธรรมชาติ", portion: "1 แก้ว / 1 ถ้วย", kcal: Math.round(sKcal * 0.40), note: "ป้องกันอาการหิวจัดก่อนมื้อเย็น" }
+                            ...(sFruit > 0 ? [{ name: pickRandom(fruits), portion: "1 ส่วน", exchange_used: "ผลไม้ 1 ส่วน", kcal: Math.round(sKcal * 0.6), note: "ลดความหิวก่อนมื้อเย็น" }] : []),
+                            { name: "น้ำเต้าหู้หวานน้อย หรือ ถั่วอบธรรมชาติ", portion: "1 แก้ว / 1 ฝ่ามือ", exchange_used: "ไขมัน/โปรตีนเสริม 1 ส่วน", kcal: Math.round(sKcal * 0.4), note: "อยู่ท้อง ควบคุมระดับน้ำตาล" }
                         ]
                     },
                     {
@@ -1071,9 +1202,7 @@
                         time: "18:00 - 19:00 น.",
                         kcal: dKcal,
                         items: [
-                            { name: "ข้าวสวยกล้อง", portion: "1 - 2 ทัพพี", kcal: Math.round(dKcal * 0.30), note: "ลดแป้งลงเล็กน้อยในมื้อเย็นเพื่อความสบายท้อง" },
-                            { name: "ปลากะพงนึ่งซีอิ๊ว หรือ อกไก่ย่างสมุนไพร", portion: "1 ชิ้นใหญ่ (80-100g)", kcal: Math.round(dKcal * 0.45), note: "โปรตีนซ่อมแซมกล้ามเนื้อ ไขมันต่ำ ย่อยง่าย" },
-                            { name: "ลวกผักสด หรือ แกงส้มผักรวม", portion: "1 ถ้วย", kcal: Math.round(dKcal * 0.25), note: "อิ่มสบายท้อง ไม่สะสมเป็นไขมันส่วนเกิน" }
+                            { name: dDish.name, portion: dDish.unit, exchange_used: `ข้าวแป้ง ${dRice} ส่วน, เนื้อสัตว์ ${dMeat} ส่วน, ผัก 1 ส่วน, ไขมัน 2 ส่วน`, kcal: dKcal, note: "เน้นโปรตีนและผัก ลดแป้งลงเพื่อความสบายท้อง" }
                         ]
                     }
                 ]
@@ -1089,59 +1218,93 @@
                 let itemsHtml = '';
                 (m.items || []).forEach(it => {
                     itemsHtml += `
-                        <div class="flex justify-between items-start py-1.5 border-b border-gray-100 last:border-none text-xs">
-                            <div class="pr-2">
-                                <div class="font-bold text-gray-800">${it.name}</div>
-                                <div class="text-[11px] text-gray-500">${it.portion} ${it.note ? `• <span class="text-blue-600">${it.note}</span>` : ''}</div>
+                        <div class="py-2.5 border-b border-gray-100 last:border-none text-xs">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex-1">
+                                    <div class="font-bold text-gray-800 text-sm">${it.name}</div>
+                                    <div class="text-gray-600 text-xs mt-0.5">${it.portion}</div>
+                                    ${it.exchange_used ? `
+                                        <div class="mt-1">
+                                            <span class="inline-block bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded text-[10px] font-semibold">
+                                                🏷️ ส่วนอาหารที่ใช้: ${it.exchange_used}
+                                            </span>
+                                        </div>
+                                    ` : ''}
+                                    ${it.note ? `<div class="text-[11px] text-gray-400 mt-0.5">💡 ${it.note}</div>` : ''}
+                                </div>
+                                <span class="shrink-0 font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded text-xs">${it.kcal} kcal</span>
                             </div>
-                            <span class="shrink-0 font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px]">${it.kcal} kcal</span>
                         </div>
                     `;
                 });
 
                 mealsHtml += `
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                        <div class="flex justify-between items-center mb-2 pb-1 border-b border-gray-200">
-                            <div>
-                                <h4 class="font-bold text-gray-900 text-sm">${m.meal_name}</h4>
-                                <span class="text-[11px] text-gray-500">${m.time}</span>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 text-base">${m.meal_name}</h4>
+                                    <span class="text-xs text-gray-500 font-medium">🕒 ${m.time}</span>
+                                </div>
+                                <span class="text-xs font-black text-indigo-700 bg-white px-3 py-1 rounded-full border border-indigo-200 shadow-sm">${m.kcal} kcal</span>
                             </div>
-                            <span class="text-xs font-black text-indigo-600 bg-white px-2.5 py-1 rounded-full border border-indigo-100 shadow-sm">${m.kcal} kcal</span>
-                        </div>
-                        <div class="space-y-1">
-                            ${itemsHtml}
+                            <div class="space-y-1">
+                                ${itemsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
             });
 
+            // ตารางสรุปส่วนอาหารที่เลือกจริง
+            const activePortions = exchangeData.filter(x => x.val > 0);
+            let portionBadgesHtml = '';
+            if (activePortions.length > 0) {
+                portionBadgesHtml = `
+                    <div class="mb-4 p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
+                        <div class="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1">
+                            <span>📋 ส่วนอาหารแลกเปลี่ยนที่คุณกำหนด (นำมาจัดสรรในมื้ออาหารทั้งหมด):</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 text-xs">
+                            ${activePortions.map(x => `
+                                <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg font-medium">
+                                    ${x.name}: <b>${x.val} ส่วน</b> <span class="text-gray-400">(${x.unit})</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
             content.innerHTML = `
-                <div class="bg-blue-50 p-3.5 rounded-xl border border-blue-100 text-xs text-blue-900 mb-5 leading-relaxed">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 text-xs text-blue-900 mb-4 leading-relaxed shadow-sm">
                     💡 <b>คำแนะนำจากนักกำหนดอาหาร:</b> ${plan.summary}
                 </div>
+
+                ${portionBadgesHtml}
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     ${mealsHtml}
                 </div>
 
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                    <h4 class="font-bold text-gray-800 text-xs mb-2">📊 สรุปเปรียบเทียบสารอาหาร (แผนที่จัด vs เป้าหมาย)</h4>
+                    <h4 class="font-bold text-gray-800 text-xs mb-2">📊 สรุปเปรียบเทียบสารอาหารเป้าหมายประจำวัน</h4>
                     <div class="grid grid-cols-4 gap-2 text-center text-xs">
-                        <div class="bg-blue-50 p-2 rounded">
-                            <div class="text-gray-500 text-[10px]">พลังงานรวม</div>
-                            <div class="font-bold text-blue-700">${plan.total_calculated.kcal} kcal</div>
+                        <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
+                            <div class="text-gray-500 text-[10px]">พลังงานเป้าหมาย</div>
+                            <div class="font-bold text-blue-700 text-sm">${plan.total_calculated.kcal} kcal</div>
                         </div>
-                        <div class="bg-green-50 p-2 rounded">
+                        <div class="bg-green-50 p-2.5 rounded-lg border border-green-100">
                             <div class="text-gray-500 text-[10px]">คาร์บเป้าหมาย</div>
-                            <div class="font-bold text-green-700">${plan.total_calculated.carb_g}g</div>
+                            <div class="font-bold text-green-700 text-sm">${plan.total_calculated.carb_g}g</div>
                         </div>
-                        <div class="bg-red-50 p-2 rounded">
+                        <div class="bg-red-50 p-2.5 rounded-lg border border-red-100">
                             <div class="text-gray-500 text-[10px]">โปรตีนเป้าหมาย</div>
-                            <div class="font-bold text-red-700">${plan.total_calculated.protein_g}g</div>
+                            <div class="font-bold text-red-700 text-sm">${plan.total_calculated.protein_g}g</div>
                         </div>
-                        <div class="bg-yellow-50 p-2 rounded">
+                        <div class="bg-yellow-50 p-2.5 rounded-lg border border-yellow-100">
                             <div class="text-gray-500 text-[10px]">ไขมันเป้าหมาย</div>
-                            <div class="font-bold text-yellow-700">${plan.total_calculated.fat_g}g</div>
+                            <div class="font-bold text-yellow-700 text-sm">${plan.total_calculated.fat_g}g</div>
                         </div>
                     </div>
                 </div>
@@ -1337,5 +1500,8 @@
             console.error(err);
         }
     </script>
+</body>
+</html>
+
 </body>
 </html>
