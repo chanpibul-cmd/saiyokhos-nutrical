@@ -777,7 +777,7 @@
                     allFoods1306 = await resp.json();
                 } else {
                     // Fallback to Google Apps Script
-                    let gasResp = await fetch("https://script.google.com/macros/s/AKfycbwsBLt327msDByXJgNnQvNGvA2UM_TG-nP77EJXJMJx5ipb2O2EwSLupHnXV4S0a2Y1Jw/exec");
+                    let gasResp = await fetch("https://script.google.com/macros/s/AKfycbwsBLt327msDByXJgNnQvNGvA2UM_TG-nP77EJXJMJx5ipb2O2EwSLupHnXV4S0a2Y1Jw/exec?action=foods");
                     let gasData = await gasResp.json();
                     if (gasData.foods) allFoods1306 = gasData.foods;
                 }
@@ -1098,113 +1098,261 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
             return JSON.parse(text);
         }
 
-        // ฟังก์ชันสำรองแบบ Dynamic ที่จัดสรรส่วนอาหารจริงตามที่ผู้ใช้เลือก พร้อมสุ่มเมนูไทยไม่ซ้ำเดิม
+        // ฟังก์ชันจัดสรรส่วนอาหารจริง 100% ตามที่ผู้ใช้เลือกในตาราง Food Exchange
         function generateDynamicDietitianPlan(targetKcal, macros, exchangeList, profile) {
-            // ดึงจำนวนส่วนอาหารที่เลือกจริง
-            const getPortionVal = (id) => {
-                const it = exchangeList.find(x => x.id === id);
-                return it ? it.val : 0;
+            // ดึงจำนวนส่วนอาหารจากชื่อหรือ ID
+            const getValByMatch = (regex) => {
+                let total = 0;
+                for (let i = 0; i < exchangeList.length; i++) {
+                    const it = exchangeList[i];
+                    if (regex.test(it.name || '') || regex.test(it.id || '')) {
+                        total += parseFloat(it.val) || 0;
+                    }
+                }
+                return Math.round(total * 10) / 10;
             };
 
-            const ricePortion = getPortionVal('rice') || 6;
-            const meatTotal = (getPortionVal('meat_lean') + getPortionVal('meat_low') + getPortionVal('meat_med') + getPortionVal('meat_high')) || 4;
-            const vegTotal = (getPortionVal('veg_a') + getPortionVal('veg_b')) || 3;
-            const fruitTotal = getPortionVal('fruit') || 3;
-            const milkTotal = (getPortionVal('milk_skim') + getPortionVal('milk_lowfat') + getPortionVal('milk_whole')) || 0;
-            const fatTotal = getPortionVal('fat') || 4;
+            const riceTotal = getValByMatch(/ข้าวแป้ง|rice/i);
+            const meatLean = getValByMatch(/เนื้อสัตว์ไขมันต่ำมาก|meat_lean/i);
+            const meatLow = getValByMatch(/เนื้อสัตว์ไขมันต่ำ$|เนื้อสัตว์ไขมันต่ำ\s|meat_low/i);
+            const meatMed = getValByMatch(/เนื้อสัตว์ไขมันปานกลาง|meat_med/i);
+            const meatHigh = getValByMatch(/เนื้อสัตว์ไขมันสูง|meat_high/i);
+            const meatTotal = Math.round((meatLean + meatLow + meatMed + meatHigh) * 10) / 10;
 
-            // คลังเมนูสุ่มหลากหลาย
+            const vegA = getValByMatch(/ผัก ประเภท ก|veg_a/i);
+            const vegB = getValByMatch(/ผัก ประเภท ข|veg_b/i);
+            const vegTotal = Math.round((vegA + vegB) * 10) / 10;
+
+            const fruitTotal = getValByMatch(/ผลไม้|fruit/i);
+            const fatTotal = getValByMatch(/ไขมัน|fat/i);
+            const milkTotal = getValByMatch(/นมขาดมันเนย|นมพร่องมันเนย|นมสด|milk/i);
+
+            // ฟังก์ชันแบ่ง 3 มื้อ (เช้า, กลางวัน, เย็น) ให้ผลรวมเท่ากับ total 100%
+            const allocate3 = (total, r1, r2) => {
+                if (total <= 0) return [0, 0, 0];
+                let p1 = Math.round((total * r1) * 2) / 2;
+                let p2 = Math.round((total * r2) * 2) / 2;
+                let p3 = Math.round((total - p1 - p2) * 2) / 2;
+                if (p3 < 0) {
+                    p2 = Math.max(0, p2 + p3);
+                    p3 = 0;
+                }
+                const diff = Math.round((total - (p1 + p2 + p3)) * 10) / 10;
+                if (diff !== 0) {
+                    p2 = Math.round((p2 + diff) * 2) / 2;
+                }
+                p3 = Math.round((total - p1 - p2) * 2) / 2;
+                return [p1, p2, p3];
+            };
+
+            // 1. จัดสรรข้าวแป้ง
+            const [bRice, lRice, dRice] = allocate3(riceTotal, 0.33, 0.34);
+
+            // 2. จัดสรรเนื้อสัตว์
+            const [bMeat, lMeat, dMeat] = allocate3(meatTotal, 0.30, 0.40);
+
+            // 3. จัดสรรผัก
+            const [bVeg, lVeg, dVeg] = allocate3(vegTotal, 0.20, 0.40);
+
+            // 4. จัดสรรผลไม้ (เน้นกลางวัน และว่างบ่าย)
+            let bFruit = 0, lFruit = 0, sFruit = 0, dFruit = 0;
+            if (fruitTotal === 1) {
+                sFruit = 1;
+            } else if (fruitTotal === 2) {
+                lFruit = 1; sFruit = 1;
+            } else if (fruitTotal === 3) {
+                bFruit = 1; lFruit = 1; sFruit = 1;
+            } else if (fruitTotal >= 4) {
+                bFruit = 1; lFruit = 1; sFruit = Math.round((fruitTotal - 3) * 10) / 10; dFruit = 1;
+            }
+
+            // 5. จัดสรรไขมัน
+            const [bFat, lFat, dFat] = allocate3(fatTotal, 0.20, 0.40);
+
+            // 6. จัดสรรนม
+            let bMilk = 0, sMilk = 0;
+            if (milkTotal === 1) bMilk = 1;
+            else if (milkTotal >= 2) { bMilk = 1; sMilk = milkTotal - 1; }
+
+            // คลังเมนูสุ่มหมุนเวียน
             const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-            const bRice = Math.max(1, Math.round(ricePortion * 0.3));
-            const lRice = Math.max(1, Math.round(ricePortion * 0.4));
-            const dRice = Math.max(1, ricePortion - bRice - lRice);
-
-            const bMeat = Math.max(1, Math.round(meatTotal * 0.25));
-            const lMeat = Math.max(1, Math.round(meatTotal * 0.45));
-            const dMeat = Math.max(1, meatTotal - bMeat - lMeat);
-
-            const bFruit = fruitTotal > 0 ? 1 : 0;
-            const lFruit = fruitTotal > 1 ? 1 : 0;
-            const sFruit = Math.max(0, fruitTotal - bFruit - lFruit);
-
             const breakfastDishes = [
-                { name: "ข้าวต้มทรงเครื่องอกไก่ฉีกและเห็ดหอม", unit: `ข้าวต้ม ${bRice * 1} ถ้วย + อกไก่ ${bMeat * 2} ช้อนโต๊ะ` },
-                { name: "โจ๊กข้าวกล้องหมูสับไม่ติดมัน ใส่ไข่ลวก", unit: `โจ๊ก ${bRice * 1} ถ้วย + หมูสับ ${bMeat * 2} ช้อนโต๊ะ` },
-                { name: "ข้าวกล้องร้อนๆ พร้อมไข่ต้มยางมะตูม", unit: `ข้าวกล้อง ${bRice} ทัพพี + ไข่ต้ม ${bMeat} ฟอง` },
-                { name: "แซนด์วิชขนมปังโฮลวีทอกไก่และผักกาดหอม", unit: `ขนมปัง ${bRice} แผ่น + อกไก่ ${bMeat * 2} ช้อนโต๊ะ` }
+                { name: "ข้าวต้มทรงเครื่องอกไก่ฉีกและเห็ดหอม", note: "ย่อยง่าย ได้คาร์โบไฮเดรตเชิงซ้อนและโปรตีน" },
+                { name: "โจ๊กข้าวกล้องหมูสับไม่ติดมัน ใส่ไข่ลวกและผักชี", note: "อิ่มสบายท้อง มีสารอาหารครบถ้วน" },
+                { name: "ข้าวกล้องร้อนๆ พร้อมไข่ต้มยางมะตูมและผักนึ่ง", note: "โปรตีนคุณภาพสูง ควบคุมไขมันได้ดี" },
+                { name: "แซนด์วิชขนมปังโฮลวีทอกไก่ฉีกและผักสด", note: "สะดวก รวดเร็ว และไฟเบอร์สูง" },
+                { name: "ข้าวต้มปลาเก๋าโรยคื่นช่ายและกระเทียมเจียว", note: "โปรตีนจากเนื้อปลา ย่อยง่าย ไขมันต่ำ" }
             ];
 
             const lunchDishes = [
-                { name: "ข้าวกล้อง + ต้มยำกุ้งน้ำใสเห็ดฟาง + ผัดผักรวมมิตร", unit: `ข้าว ${lRice} ทัพพี + กุ้ง ${lMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
-                { name: "ข้าวไรซ์เบอร์รี่ + อกไก่ผัดพริกไทยดำ + ต้มจืดฟัก", unit: `ข้าว ${lRice} ทัพพี + ไก่ ${lMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
-                { name: "ก๋วยเตี๋ยวเส้นหมี่น้ำใสลูกชิ้นปลาและเนื้อปลาสด", unit: `เส้นหมี่ ${lRice} ทัพพี + เนื้อปลา ${lMeat * 2} ช้อนโต๊ะ + ถั่วงอกผักบุ้ง 1 ทัพพี` },
-                { name: "ข้าวสวย + พะแนงไก่ใส่ถั่วฝักยาว + ยำแตงกวา", unit: `ข้าว ${lRice} ทัพพี + ไก่ ${lMeat * 2} ช้อนโต๊ะ + แตงกวา 1 ทัพพี` },
-                { name: "ข้าวกล้อง + ลาบหมูไม่ติดมัน + ผักสดเคียงแตงกวาถั่วพู", unit: `ข้าว ${lRice} ทัพพี + หมูสับ ${lMeat * 2} ช้อนโต๊ะ + ผักสด 1 ทัพพี` }
+                { name: "ข้าวกล้อง + ต้มยำกุ้งน้ำใสเห็ดฟาง + ผัดผักรวมมิตร", note: "ซดคล่องคอ แคลอรี่ต่ำ อุดมด้วยสมุนไพร" },
+                { name: "ข้าวไรซ์เบอร์รี่ + อกไก่ผัดขิง + ต้มจืดเต้าหู้หมูสับสาหร่าย", note: "ขิงช่วยย่อยอาหาร โปรตีนลีนจากไก่และเต้าหู้" },
+                { name: "ก๋วยเตี๋ยวเส้นหมี่น้ำใสลูกชิ้นปลาและเนื้อปลาสด + ถั่วงอกผักบุ้ง", note: "คาร์บจากเส้นหมี่ ผักลวกและโปรตีนปลา" },
+                { name: "ข้าวสวย + พะแนงไก่ใส่ถั่วฝักยาว + ยำแตงกวา", note: "รสชาติกลมกล่อม มีสัดส่วนไขมันดีที่เหมาะสม" },
+                { name: "ข้าวกล้อง + ลาบหมูไม่ติดมัน + ผักสดเคียงแตงกวาถั่วพู", note: "แซ่บแบบคลีน ได้โปรตีนเต็มที่ไม่อ้วน" },
+                { name: "ข้าวสวย + ผัดกะเพราอกไก่สับไข่ดาวน้ำ + แกงจืดฟัก", note: "เมนูโปรดคนไทย ปรุงน้ำมันน้อยดีต่อสุขภาพ" }
             ];
 
             const dinnerDishes = [
-                { name: "ข้าวกล้อง + ปลากะพงนึ่งซีอิ๊วขิงซอย + แกงจืดเต้าหู้ผักกาดขาว", unit: `ข้าว ${dRice} ทัพพี + ปลากะพง ${dMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
-                { name: "ข้าวสวย + แกงส้มผักรวมกุ้งสด + ผัดบวบใส่ไข่", unit: `ข้าว ${dRice} ทัพพี + กุ้ง ${dMeat * 2} ช้อนโต๊ะ + ผัก 1 ทัพพี` },
-                { name: "ข้าวกล้อง + สเต็กอกไก่ย่างสมุนไพร + สลัดผักน้ำใส", unit: `ข้าว ${dRice} ทัพพี + อกไก่ ${dMeat * 2} ช้อนโต๊ะ + ผักสลัด 1 ทัพพี` },
-                { name: "ข้าวไรซ์เบอร์รี่ + ยำปลากระป๋องใส่หอมแดงพริกสด + ผักลวก", unit: `ข้าว ${dRice} ทัพพี + ปลา ${dMeat * 2} ช้อนโต๊ะ + ผักลวก 1 ทัพพี` }
+                { name: "ข้าวกล้อง + ปลากะพงนึ่งซีอิ๊วขิงซอย + แกงจืดเต้าหู้ผักกาดขาว", note: "เนื้อปลาย่อยง่าย ไม่หนักท้องช่วงค่ำ" },
+                { name: "ข้าวสวย + แกงส้มผักรวมกุ้งสด + ผัดบวบใส่ไข่", note: "รสเปรี้ยวนำจากมะขามเปียก ไร้กะทิ ใยอาหารสูง" },
+                { name: "ข้าวกล้อง + สเต็กอกไก่ย่างสมุนไพร + สลัดผักน้ำใส", note: "โปรตีนเน้นๆ เสริมสร้างกล้ามเนื้อยามหลับ" },
+                { name: "ข้าวไรซ์เบอร์รี่ + ยำปลากระป๋องใส่หอมแดงพริกสด + ผักลวกจิ้ม", note: "แคลเซียมสูงจากก้างปลา อิ่มท้องไขมันต่ำ" },
+                { name: "ข้าวสวย + ต้มยำปลานิลน้ำใส + ผัดผักแขนงน้ำมันหอย", note: "ต้มยำน้ำใสซดอุ่นๆ ผักแขนงกรอบอร่อย" }
             ];
 
-            const fruits = ["กล้วยน้ำว้า 1 ผล", "ส้มเขียวหวาน 1 ผล", "ฝรั่งสด 4-5 ชิ้นคำ", "แตงโมสด 6-8 ชิ้นคำ", "แอปเปิ้ล 1/2 ผล"];
+            const fruits = ["ส้มเขียวหวาน 1 ผล", "กล้วยน้ำว้า 1 ผล", "แตงโมสด 6-8 ชิ้นคำ", "ฝรั่งสด 4-5 ชิ้นคำ", "แอปเปิ้ล 1/2 ผล"];
             const bDish = pickRandom(breakfastDishes);
             const lDish = pickRandom(lunchDishes);
             const dDish = pickRandom(dinnerDishes);
 
-            const bKcal = Math.round(targetKcal * 0.28);
-            const lKcal = Math.round(targetKcal * 0.38);
-            const sKcal = Math.round(targetKcal * 0.10);
-            const dKcal = targetKcal - bKcal - lKcal - sKcal;
+            // คำนวณพลังงานจริงตามส่วนอาหาร (Food Exchange Calorie Formula)
+            // ข้าว 80 kcal, เนื้อสัตว์เฉลี่ย ~45 kcal (ตามสัดส่วนต่ำมาก/ต่ำ), ผัก ข 28 kcal, ผลไม้ 60 kcal, ไขมัน 45 kcal, นม 100 kcal
+            const calcMealKcal = (r, m, v, fr, ft, mk) => {
+                return Math.round((r * 80) + (m * 45) + (v * 28) + (fr * 60) + (ft * 45) + (mk * 100));
+            };
+
+            const bKcal = calcMealKcal(bRice, bMeat, bVeg, bFruit, bFat, bMilk);
+            const lKcal = calcMealKcal(lRice, lMeat, lVeg, lFruit, lFat, 0);
+            const sKcal = calcMealKcal(0, 0, 0, sFruit, 0, sMilk) || 80;
+            const dKcal = calcMealKcal(dRice, dMeat, dVeg, dFruit, dFat, 0);
+
+            // Format portion strings
+            const buildPortionStr = (r, m, v, ft) => {
+                const parts = [];
+                if (r > 0) parts.push(`ข้าว/แป้ง ${r} ทัพพี`);
+                if (m > 0) parts.push(`เนื้อสัตว์ ${Math.round(m * 2 * 10) / 10} ช้อนโต๊ะ`);
+                if (v > 0) parts.push(`ผักสุก ${v} ทัพพี`);
+                if (ft > 0) parts.push(`น้ำมันปรุง ${ft} ช้อนชา`);
+                return parts.join(' + ');
+            };
+
+            const buildExchangeStr = (r, m, v, ft) => {
+                const parts = [];
+                if (r > 0) parts.push(`ข้าวแป้ง ${r} ส่วน`);
+                if (m > 0) parts.push(`เนื้อสัตว์ ${m} ส่วน`);
+                if (v > 0) parts.push(`ผัก ${v} ส่วน`);
+                if (ft > 0) parts.push(`ไขมัน ${ft} ส่วน`);
+                return parts.join(', ');
+            };
+
+            const bItems = [
+                {
+                    name: bDish.name,
+                    portion: buildPortionStr(bRice, bMeat, bVeg, bFat),
+                    exchange_used: buildExchangeStr(bRice, bMeat, bVeg, bFat),
+                    kcal: Math.round(calcMealKcal(bRice, bMeat, bVeg, 0, bFat, 0)),
+                    note: bDish.note
+                }
+            ];
+            if (bFruit > 0) {
+                bItems.push({
+                    name: pickRandom(fruits),
+                    portion: `${bFruit} ส่วน`,
+                    exchange_used: `ผลไม้ ${bFruit} ส่วน`,
+                    kcal: Math.round(bFruit * 60),
+                    note: "วิตามินซีและกากใยช่วงเช้า"
+                });
+            }
+            if (bMilk > 0) {
+                bItems.push({
+                    name: "นมสด/นมพร่องมันเนย",
+                    portion: `${bMilk} กล่อง (240 ml)`,
+                    exchange_used: `นม ${bMilk} ส่วน`,
+                    kcal: Math.round(bMilk * 100),
+                    note: "แคลเซียมและโปรตีน"
+                });
+            }
+
+            const lItems = [
+                {
+                    name: lDish.name,
+                    portion: buildPortionStr(lRice, lMeat, lVeg, lFat),
+                    exchange_used: buildExchangeStr(lRice, lMeat, lVeg, lFat),
+                    kcal: Math.round(calcMealKcal(lRice, lMeat, lVeg, 0, lFat, 0)),
+                    note: lDish.note
+                }
+            ];
+            if (lFruit > 0) {
+                lItems.push({
+                    name: pickRandom(fruits),
+                    portion: `${lFruit} ส่วน`,
+                    exchange_used: `ผลไม้ ${lFruit} ส่วน`,
+                    kcal: Math.round(lFruit * 60),
+                    note: "สดชื่น ล้างปากหลังอาหาร"
+                });
+            }
+
+            const sItems = [];
+            if (sFruit > 0) {
+                sItems.push({
+                    name: pickRandom(fruits),
+                    portion: `${sFruit} ส่วน`,
+                    exchange_used: `ผลไม้ ${sFruit} ส่วน`,
+                    kcal: Math.round(sFruit * 60),
+                    note: "ลดความหิวก่อนมื้อเย็น"
+                });
+            }
+            if (sMilk > 0) {
+                sItems.push({
+                    name: "นมสด/นมถั่วเหลือง",
+                    portion: `${sMilk} กล่อง (240 ml)`,
+                    exchange_used: `นม ${sMilk} ส่วน`,
+                    kcal: Math.round(sMilk * 100),
+                    note: "อิ่มท้อง อยู่ได้ถึงมื้อค่ำ"
+                });
+            }
+            if (sItems.length === 0) {
+                sItems.push({
+                    name: "น้ำเต้าหู้หวานน้อย หรือ ถั่วอบธรรมชาติ",
+                    portion: "1 แก้ว / 1 ฝ่ามือเล็ก",
+                    exchange_used: "อาหารว่างเสริม",
+                    kcal: 80,
+                    note: "ควบคุมระดับน้ำตาลในเลือด"
+                });
+            }
+
+            const dItems = [
+                {
+                    name: dDish.name,
+                    portion: buildPortionStr(dRice, dMeat, dVeg, dFat),
+                    exchange_used: buildExchangeStr(dRice, dMeat, dVeg, dFat),
+                    kcal: Math.round(calcMealKcal(dRice, dMeat, dVeg, 0, dFat, 0)),
+                    note: dDish.note
+                }
+            ];
+            if (dFruit > 0) {
+                dItems.push({
+                    name: pickRandom(fruits),
+                    portion: `${dFruit} ส่วน`,
+                    exchange_used: `ผลไม้ ${dFruit} ส่วน`,
+                    kcal: Math.round(dFruit * 60),
+                    note: "กากใยช่วยขับถ่ายยามเช้า"
+                });
+            }
 
             return {
-                summary: `แผนอาหารนี้กระจายส่วนอาหารตามโควต้าที่คุณเลือกจริง (ข้าวแป้ง ${ricePortion} ส่วน, เนื้อสัตว์ ${meatTotal} ส่วน, ผัก ${vegTotal} ส่วน, ผลไม้ ${fruitTotal} ส่วน, ไขมัน ${fatTotal} ส่วน) เพื่อรักษาการเผาผลาญให้สม่ำเสมอตลอดวัน`,
+                summary: `แผนอาหารนี้กระจายส่วนอาหารตามโควต้าที่คุณเลือกไว้ครบ 100% (ข้าวแป้ง ${riceTotal} ส่วน, เนื้อสัตว์ ${meatTotal} ส่วน, ผัก ${vegTotal} ส่วน, ผลไม้ ${fruitTotal} ส่วน, ไขมัน ${fatTotal} ส่วน)`,
+                allocations: [
+                    { name: '🌾 ข้าวแป้ง', quota: riceTotal, b: bRice, l: lRice, s: 0, d: dRice, sum: Math.round((bRice + lRice + dRice)*10)/10, unit: 'ทัพพี' },
+                    { name: '🥩 เนื้อสัตว์', quota: meatTotal, b: bMeat, l: lMeat, s: 0, d: dMeat, sum: Math.round((bMeat + lMeat + dMeat)*10)/10, unit: 'ส่วน (2 ชต.)' },
+                    { name: '🥬 ผัก', quota: vegTotal, b: bVeg, l: lVeg, s: 0, d: dVeg, sum: Math.round((bVeg + lVeg + dVeg)*10)/10, unit: 'ทัพพี' },
+                    { name: '🍎 ผลไม้', quota: fruitTotal, b: bFruit, l: lFruit, s: sFruit, d: dFruit, sum: Math.round((bFruit + lFruit + sFruit + dFruit)*10)/10, unit: 'ส่วน' },
+                    { name: '🫒 ไขมัน', quota: fatTotal, b: bFat, l: lFat, s: 0, d: dFat, sum: Math.round((bFat + lFat + dFat)*10)/10, unit: 'ช้อนชา' },
+                    ...(milkTotal > 0 ? [{ name: '🥛 นม', quota: milkTotal, b: bMilk, l: 0, s: sMilk, d: 0, sum: Math.round((bMilk + sMilk)*10)/10, unit: 'กล่อง' }] : [])
+                ],
                 total_calculated: {
-                    kcal: Math.round(targetKcal),
+                    kcal: Math.round(bKcal + lKcal + sKcal + dKcal),
                     carb_g: macros.c,
                     protein_g: macros.p,
                     fat_g: macros.f
                 },
                 meals: [
-                    {
-                        meal_name: "มื้อเช้า (Breakfast)",
-                        time: "07:00 - 08:30 น.",
-                        kcal: bKcal,
-                        items: [
-                            { name: bDish.name, portion: bDish.unit, exchange_used: `ข้าวแป้ง ${bRice} ส่วน, เนื้อสัตว์ ${bMeat} ส่วน`, kcal: Math.round(bKcal * 0.75), note: "ย่อยง่าย ได้คาร์โบไฮเดรตเชิงซ้อนและโปรตีน" },
-                            ...(bFruit > 0 ? [{ name: pickRandom(fruits), portion: "1 ส่วน", exchange_used: "ผลไม้ 1 ส่วน", kcal: Math.round(bKcal * 0.25), note: "วิตามินซีและกากใย" }] : []),
-                            ...(milkTotal > 0 ? [{ name: "นมสด/พร่องมันเนย", portion: "1 กล่อง (240 ml)", exchange_used: "นม 1 ส่วน", kcal: 120, note: "แคลเซียมช่วงเช้า" }] : [])
-                        ]
-                    },
-                    {
-                        meal_name: "มื้อกลางวัน (Lunch)",
-                        time: "12:00 - 13:00 น.",
-                        kcal: lKcal,
-                        items: [
-                            { name: lDish.name, portion: lDish.unit, exchange_used: `ข้าวแป้ง ${lRice} ส่วน, เนื้อสัตว์ ${lMeat} ส่วน, ผัก 1 ส่วน, ไขมัน 2 ส่วน`, kcal: Math.round(lKcal * 0.82), note: "สารอาหารหลักสำหรับพลังงานช่วงบ่าย" },
-                            ...(lFruit > 0 ? [{ name: pickRandom(fruits), portion: "1 ส่วน", exchange_used: "ผลไม้ 1 ส่วน", kcal: Math.round(lKcal * 0.18), note: "สดชื่น ล้างปากหลังอาหาร" }] : [])
-                        ]
-                    },
-                    {
-                        meal_name: "อาหารว่างบ่าย (Afternoon Snack)",
-                        time: "15:00 - 15:30 น.",
-                        kcal: sKcal,
-                        items: [
-                            ...(sFruit > 0 ? [{ name: pickRandom(fruits), portion: "1 ส่วน", exchange_used: "ผลไม้ 1 ส่วน", kcal: Math.round(sKcal * 0.6), note: "ลดความหิวก่อนมื้อเย็น" }] : []),
-                            { name: "น้ำเต้าหู้หวานน้อย หรือ ถั่วอบธรรมชาติ", portion: "1 แก้ว / 1 ฝ่ามือ", exchange_used: "ไขมัน/โปรตีนเสริม 1 ส่วน", kcal: Math.round(sKcal * 0.4), note: "อยู่ท้อง ควบคุมระดับน้ำตาล" }
-                        ]
-                    },
-                    {
-                        meal_name: "มื้อเย็น (Dinner)",
-                        time: "18:00 - 19:00 น.",
-                        kcal: dKcal,
-                        items: [
-                            { name: dDish.name, portion: dDish.unit, exchange_used: `ข้าวแป้ง ${dRice} ส่วน, เนื้อสัตว์ ${dMeat} ส่วน, ผัก 1 ส่วน, ไขมัน 2 ส่วน`, kcal: dKcal, note: "เน้นโปรตีนและผัก ลดแป้งลงเพื่อความสบายท้อง" }
-                        ]
-                    }
+                    { meal_name: "มื้อเช้า (Breakfast)", time: "07:00 - 08:30 น.", kcal: bKcal, items: bItems },
+                    { meal_name: "มื้อกลางวัน (Lunch)", time: "12:00 - 13:00 น.", kcal: lKcal, items: lItems },
+                    { meal_name: "อาหารว่างบ่าย (Afternoon Snack)", time: "15:00 - 15:30 น.", kcal: sKcal, items: sItems },
+                    { meal_name: "มื้อเย็น (Dinner)", time: "18:00 - 19:00 น.", kcal: dKcal, items: dItems }
                 ]
             };
         }
@@ -1232,7 +1380,7 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
                                     ` : ''}
                                     ${it.note ? `<div class="text-[11px] text-gray-400 mt-0.5">💡 ${it.note}</div>` : ''}
                                 </div>
-                                <span class="shrink-0 font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded text-xs">${it.kcal} kcal</span>
+                                <span class="shrink-0 font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded text-xs">${Math.round(it.kcal)} kcal</span>
                             </div>
                         </div>
                     `;
@@ -1246,7 +1394,7 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
                                     <h4 class="font-bold text-gray-900 text-base">${m.meal_name}</h4>
                                     <span class="text-xs text-gray-500 font-medium">🕒 ${m.time}</span>
                                 </div>
-                                <span class="text-xs font-black text-indigo-700 bg-white px-3 py-1 rounded-full border border-indigo-200 shadow-sm">${m.kcal} kcal</span>
+                                <span class="text-xs font-black text-indigo-700 bg-white px-3 py-1 rounded-full border border-indigo-200 shadow-sm">${Math.round(m.kcal)} kcal</span>
                             </div>
                             <div class="space-y-1">
                                 ${itemsHtml}
@@ -1256,32 +1404,61 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
                 `;
             });
 
-            // ตารางสรุปส่วนอาหารที่เลือกจริง
-            const activePortions = exchangeData.filter(x => x.val > 0);
-            let portionBadgesHtml = '';
-            if (activePortions.length > 0) {
-                portionBadgesHtml = `
-                    <div class="mb-4 p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
-                        <div class="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1">
-                            <span>📋 ส่วนอาหารแลกเปลี่ยนที่คุณกำหนด (นำมาจัดสรรในมื้ออาหารทั้งหมด):</span>
+            // ตารางสรุปการจัดสรรส่วนอาหารลง 4 มื้อ
+            let allocationTableHtml = '';
+            if (plan.allocations && plan.allocations.length > 0) {
+                allocationTableHtml = `
+                    <div class="mb-5 p-4 bg-white rounded-xl border border-indigo-100 shadow-sm">
+                        <div class="text-xs font-bold text-indigo-950 mb-2.5 flex items-center gap-1.5">
+                            <span>📋 สรุปการกระจายส่วนอาหารแลกเปลี่ยนลง 4 มื้อ (จัดสรรครบถ้วน 100%):</span>
                         </div>
-                        <div class="flex flex-wrap gap-1.5 text-xs">
-                            ${activePortions.map(x => `
-                                <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg font-medium">
-                                    ${x.name}: <b>${x.val} ส่วน</b> <span class="text-gray-400">(${x.unit})</span>
-                                </span>
-                            `).join('')}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-center border-collapse">
+                                <thead>
+                                    <tr class="bg-indigo-50 text-indigo-900 font-bold border-b border-indigo-100">
+                                        <th class="py-2 px-3 text-left">หมวดอาหาร</th>
+                                        <th class="py-2 px-2 bg-indigo-100/50">โควต้าที่คุณกำหนด</th>
+                                        <th class="py-2 px-2">มื้อเช้า</th>
+                                        <th class="py-2 px-2">มื้อกลางวัน</th>
+                                        <th class="py-2 px-2">อาหารว่าง</th>
+                                        <th class="py-2 px-2">มื้อเย็น</th>
+                                        <th class="py-2 px-2 text-indigo-700 font-black">รวมจัดสรร</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 text-gray-700">
+                                    ${plan.allocations.map(al => `
+                                        <tr class="hover:bg-gray-50/80 transition">
+                                            <td class="py-2 px-3 text-left font-bold text-gray-800">${al.name}</td>
+                                            <td class="py-2 px-2 font-black text-indigo-700 bg-indigo-50/40">${al.quota} ส่วน</td>
+                                            <td class="py-2 px-2 font-medium">${al.b > 0 ? `${al.b} ส่วน` : '-'}</td>
+                                            <td class="py-2 px-2 font-medium">${al.l > 0 ? `${al.l} ส่วน` : '-'}</td>
+                                            <td class="py-2 px-2 font-medium">${al.s > 0 ? `${al.s} ส่วน` : '-'}</td>
+                                            <td class="py-2 px-2 font-medium">${al.d > 0 ? `${al.d} ส่วน` : '-'}</td>
+                                            <td class="py-2 px-2 font-black ${al.sum === al.quota ? 'text-green-600' : 'text-blue-600'}">
+                                                ${al.sum} ส่วน ${al.sum === al.quota ? '✅' : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 `;
             }
 
             content.innerHTML = `
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 text-xs text-blue-900 mb-4 leading-relaxed shadow-sm">
-                    💡 <b>คำแนะนำจากนักกำหนดอาหาร:</b> ${plan.summary}
+                <!-- กล่องข้อควรระวัง -->
+                <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs text-amber-900 mb-4 leading-relaxed shadow-sm">
+                    <div class="font-bold text-sm text-amber-800 flex items-center gap-1.5 mb-1.5">
+                        <span>⚠️ ข้อควรระวัง:</span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-1 pl-1 text-amber-800 text-xs">
+                        <li>หากคุณมีโรคประจำตัว (เช่น เบาหวาน ไต หัวใจ หรือความดันโลหิตสูง) แนะนำให้ปรึกษาแพทย์หรือนักโภชนาการเพื่อวางแผนโภชนาการเฉพาะบุคคลค่ะ</li>
+                        <li>ข้อมูลนี้เป็นคำแนะนำทั่วไป ไม่ใช่คำแนะนำทางการแพทย์ หากมีอาการผิดปกติควรพบแพทย์นะคะ</li>
+                    </ul>
                 </div>
 
-                ${portionBadgesHtml}
+                ${allocationTableHtml}
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     ${mealsHtml}
@@ -1291,8 +1468,8 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
                     <h4 class="font-bold text-gray-800 text-xs mb-2">📊 สรุปเปรียบเทียบสารอาหารเป้าหมายประจำวัน</h4>
                     <div class="grid grid-cols-4 gap-2 text-center text-xs">
                         <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
-                            <div class="text-gray-500 text-[10px]">พลังงานเป้าหมาย</div>
-                            <div class="font-bold text-blue-700 text-sm">${plan.total_calculated.kcal} kcal</div>
+                            <div class="text-gray-500 text-[10px]">พลังงานรวมของแผน</div>
+                            <div class="font-bold text-blue-700 text-sm">${Math.round(plan.total_calculated.kcal)} kcal</div>
                         </div>
                         <div class="bg-green-50 p-2.5 rounded-lg border border-green-100">
                             <div class="text-gray-500 text-[10px]">คาร์บเป้าหมาย</div>
@@ -1502,6 +1679,5 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
     </script>
 </body>
 </html>
-
 </body>
 </html>
