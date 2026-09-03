@@ -1361,6 +1361,11 @@
                     const data = await response.json();
                     if (data.status === 'success' && data.meal_plan) {
                         mealPlanResult = data.meal_plan;
+                        // แนบตารางกระจายส่วนอาหารที่ถูกต้องตรงตามโควต้าจริงเสมอ
+                        if (!mealPlanResult.allocations) {
+                            const dynPlan = generateDynamicDietitianPlan(currentTargetKcal, targetMacros, exchangeData, profile);
+                            mealPlanResult.allocations = dynPlan.allocations;
+                        }
                     }
                 }
             } catch(errGas) {
@@ -1391,19 +1396,12 @@
             };
 
             const riceTotal = getValByMatch(/ข้าวแป้ง|rice/i);
-            const meatLean = getValByMatch(/เนื้อสัตว์ไขมันต่ำมาก|meat_lean/i);
-            const meatLow = getValByMatch(/เนื้อสัตว์ไขมันต่ำ$|เนื้อสัตว์ไขมันต่ำ\s|meat_low/i);
-            const meatMed = getValByMatch(/เนื้อสัตว์ไขมันปานกลาง|meat_med/i);
-            const meatHigh = getValByMatch(/เนื้อสัตว์ไขมันสูง|meat_high/i);
-            const meatTotal = Math.round((meatLean + meatLow + meatMed + meatHigh) * 10) / 10;
-
-            const vegA = getValByMatch(/ผัก ประเภท ก|veg_a/i);
-            const vegB = getValByMatch(/ผัก ประเภท ข|veg_b/i);
-            const vegTotal = Math.round((vegA + vegB) * 10) / 10;
-
+            const meatTotal = getValByMatch(/เนื้อสัตว์|meat/i);
+            const vegTotal = getValByMatch(/ผัก|veg/i);
             const fruitTotal = getValByMatch(/ผลไม้|fruit/i);
-            const fatTotal = getValByMatch(/ไขมัน|fat/i);
-            const milkTotal = getValByMatch(/นมขาดมันเนย|นมพร่องมันเนย|นมสด|milk/i);
+            // หมวดไขมัน/น้ำมันปรุงอาหาร (Fats & Oils) - แยกเฉพาะหมวดน้ำมัน ไม่รวมไขมันที่แฝงในเนื้อสัตว์หรือนม
+            const fatTotal = getValByMatch(/^(ไขมัน|น้ำมัน)(\s|\(|$)|^fat$/i);
+            const milkTotal = getValByMatch(/^นม|milk/i);
 
             // ฟังก์ชันแบ่ง 3 มื้อ (เช้า, กลางวัน, เย็น) ให้ผลรวมเท่ากับ total 100%
             const allocate3 = (total, r1, r2) => {
