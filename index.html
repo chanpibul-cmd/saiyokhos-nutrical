@@ -438,7 +438,7 @@
                     <!-- คอลัมน์ขวา: การคำนวณส่วนอาหาร (Food Exchange) -->
                     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col print-right-col">
                         <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">2. กำหนดส่วนอาหาร (Portion Control)</h2>
-                        <p class="text-xs text-gray-500 mb-4 print-desc">ปรับจำนวนส่วน (ทัพพี, ช้อนโต๊ะ, แก้ว) ให้สารอาหารรวมใกล้เคียงเป้าหมายทางซ้ายมือ</p>
+                        <p class="text-xs text-gray-500 mb-4 print-desc">ปรับจำนวนส่วนอาหาร (หน่วย: ส่วน) ให้สารอาหารรวมใกล้เคียงเป้าหมายทางซ้ายมือ</p>
                         
                         <div class="space-y-3 flex-1 overflow-y-auto">
                             <!-- รายการหมวดอาหาร (ดึงข้อมูลจาก GAS/Excel) -->
@@ -511,20 +511,20 @@
         let targetMacros = { c:0, p:0, f:0 };
         let globalFoodItems = [];
 
-        // ข้อมูล Food Exchange List อ้างอิงจาก test.xlsx
+        // ข้อมูล Food Exchange List อ้างอิงจาก test.xlsx / Google Sheets
         const exchangeData = [
-            { id: 'milk_skim', name: 'นมขาดมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 0, kcal: 80, val: 0 },
-            { id: 'milk_lowfat', name: 'นมพร่องมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 5, kcal: 125, val: 0 },
-            { id: 'milk_whole', name: 'นมสด', unit: 'กล่อง', c: 12, p: 8, f: 8, kcal: 150, val: 0 },
-            { id: 'veg_a', name: 'ผัก ก', unit: 'ทัพพี', c: 0, p: 0, f: 0, kcal: 0, val: 0 },
-            { id: 'veg_b', name: 'ผัก ข', unit: 'ทัพพี', c: 5, p: 2, f: 0, kcal: 28, val: 3 },
-            { id: 'fruit', name: 'ผลไม้', unit: 'ส่วน', c: 15, p: 0, f: 0, kcal: 60, val: 3 },
-            { id: 'rice', name: 'ข้าวแป้ง', unit: 'ทัพพี', c: 18, p: 2, f: 0, kcal: 80, val: 6 },
-            { id: 'meat_lean', name: 'เนื้อไขมันต่ำมาก', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 1, kcal: 35, val: 4 },
-            { id: 'meat_low', name: 'เนื้อไขมันต่ำ', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 3, kcal: 55, val: 2 },
-            { id: 'meat_med', name: 'เนื้อไขมันปานกลาง', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 5, kcal: 75, val: 0 },
-            { id: 'meat_high', name: 'เนื้อไขมันสูง', unit: 'ช้อนโต๊ะ', c: 0, p: 7, f: 8, kcal: 100, val: 0 },
-            { id: 'fat', name: 'ไขมัน', unit: 'ช้อนชา', c: 0, p: 0, f: 5, kcal: 45, val: 4 }
+            { id: 'milk_skim', name: 'นมขาดมันเนย (240 ml)', unit: '1 กล่อง', c: 12, p: 8, f: 0, kcal: 80, val: 0 },
+            { id: 'milk_lowfat', name: 'นมพร่องมันเนย (240 ml)', unit: '1 กล่อง', c: 12, p: 8, f: 5, kcal: 125, val: 0 },
+            { id: 'milk_whole', name: 'นมสด (240 ml)', unit: '1 กล่อง', c: 12, p: 8, f: 8, kcal: 152, val: 0 },
+            { id: 'veg_a', name: 'ผัก ประเภท ก', unit: 'ดิบ 2 ทัพพี ,สุก 1 ทัพพี', c: 0, p: 0, f: 0, kcal: 0, val: 0 },
+            { id: 'veg_b', name: 'ผัก ประเภท ข', unit: 'ดิบ 2 ทัพพี ,สุก 1 ทัพพี', c: 5, p: 2, f: 0, kcal: 28, val: 3 },
+            { id: 'fruit', name: 'ผลไม้', unit: 'แล้วแต่ขนาด', c: 15, p: 0, f: 0, kcal: 60, val: 3 },
+            { id: 'rice', name: 'ข้าวแป้ง', unit: '1 ทัพพี', c: 18, p: 2, f: 0, kcal: 80, val: 6 },
+            { id: 'meat_lean', name: 'เนื้อสัตว์ไขมันต่ำมาก', unit: '2 ช้อนโต๊ะ', c: 0, p: 7, f: 1, kcal: 37, val: 4 },
+            { id: 'meat_low', name: 'เนื้อสัตว์ไขมันต่ำ', unit: '2 ช้อนโต๊ะ', c: 0, p: 7, f: 3, kcal: 55, val: 2 },
+            { id: 'meat_med', name: 'เนื้อสัตว์ไขมันปานกลาง', unit: '2 ช้อนโต๊ะ', c: 0, p: 7, f: 5, kcal: 73, val: 0 },
+            { id: 'meat_high', name: 'เนื้อสัตว์ไขมันสูง', unit: '2 ช้อนโต๊ะ', c: 0, p: 7, f: 8, kcal: 100, val: 0 },
+            { id: 'fat', name: 'ไขมัน', unit: '1 ช้อนชา', c: 0, p: 0, f: 5, kcal: 45, val: 4 }
         ];
 
         function initExchangeUI() {
@@ -534,14 +534,14 @@
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-white border rounded p-2 text-sm";
                 div.innerHTML = `
-                    <div class="flex-1">
+                    <div class="flex-1 pr-2">
                         <div class="font-bold text-gray-700">${item.name}</div>
-                        <div class="text-[10px] text-gray-400">C:${item.c} P:${item.p} F:${item.f} (${item.kcal} kcal) / 1 ${item.unit}</div>
+                        <div class="text-[10px] text-gray-400">C:${item.c} P:${item.p} F:${item.f} (${item.kcal} kcal) / 1 ส่วน = ${item.unit}</div>
                     </div>
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 shrink-0">
                         <button onclick="updatePortion(${index}, -1)" class="w-6 h-6 bg-gray-200 rounded flex items-center justify-center font-bold text-gray-600 hover:bg-gray-300">-</button>
                         <span class="w-6 text-center font-bold text-blue-700" id="val_ex_${index}">${item.val}</span>
-                        <span class="text-xs text-gray-500 mr-1">${item.unit}</span>
+                        <span class="text-xs text-gray-500 mr-1">ส่วน</span>
                         <button onclick="updatePortion(${index}, 1)" class="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center font-bold hover:bg-blue-200">+</button>
                     </div>
                 `;
@@ -740,6 +740,15 @@
             }
         }
 
+        function cleanGroupName(str) {
+            if (!str) return '';
+            return str
+                .replace(/\(.*?\)/g, '')   // ตัดวงเล็บ เช่น (240 ml)
+                .replace('ประเภท', '')     // ตัดคำว่า ประเภท
+                .replace(/\s+/g, ' ')     // ปรับเว้นวรรค
+                .trim();
+        }
+
         window.showFoodExamples = function(shouldScroll = true) {
             if (globalFoodItems.length === 0) {
                 if (shouldScroll) alert("กำลังรอข้อมูลจาก Google Sheets... หรือไม่มีข้อมูล");
@@ -750,7 +759,7 @@
             const selectedGroups = [];
             for (let i = 0; i < exchangeData.length; i++) {
                 if (exchangeData[i].val > 0) {
-                    selectedGroups.push(exchangeData[i].name.replace('สัตว์', '').trim());
+                    selectedGroups.push(cleanGroupName(exchangeData[i].name));
                 }
             }
             
@@ -781,7 +790,7 @@
 
             for (const cat in grouped) {
                 // Check if this category matches selected groups exactly
-                const catClean = cat.replace('สัตว์', '').trim();
+                const catClean = cleanGroupName(cat);
                 if (selectedGroups.indexOf(catClean) !== -1) {
                     hasMatch = true;
                     html += `<div class="example-category-card bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${cat}</h3><ul class="text-sm space-y-2 text-gray-600">`;
