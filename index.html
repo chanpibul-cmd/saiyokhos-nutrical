@@ -548,6 +548,28 @@
                     <button onclick="filterCategory('09', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">นม (09)</button>
                     <button onclick="filterCategory('12', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ขนมหวาน (12)</button>
                 </div>
+
+                <!-- Nutrient Sort & Filter Toolbar -->
+                <div class="flex items-center justify-between gap-2 flex-wrap text-xs pt-2 border-t border-gray-200">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-bold text-gray-700 flex items-center gap-1">🔬 จัดเรียงตามสารอาหาร:</span>
+                        <select id="food_nutrient_sort" onchange="onNutrientSortChange(this.value)" class="py-1 px-2.5 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-indigo-900 focus:ring-2 focus:ring-indigo-500">
+                            <option value="default">📋 ลำดับมาตรฐาน (รหัสอาหาร)</option>
+                            <option value="kcal_asc">🍃 แคลอรี่ต่ำสุด (Low Calorie)</option>
+                            <option value="kcal_desc">🔥 แคลอรี่สูงสุด (High Calorie)</option>
+                            <option value="p_desc">🥩 โปรตีนสูงสุด (High Protein)</option>
+                            <option value="fiber_desc">🌾 ใยอาหารสูงสุด (High Fiber)</option>
+                            <option value="ca_desc">🦴 แคลเซียมสูงสุด (High Calcium)</option>
+                            <option value="fe_desc">🩸 ธาตุเหล็กสูงสุด (High Iron)</option>
+                            <option value="vit_c_desc">🍊 วิตามินซีสูงสุด (High Vitamin C)</option>
+                            <option value="folate_desc">🌿 โฟเลตสูงสุด (High Folate)</option>
+                            <option value="k_desc">🫘 โพแทสเซียมสูง (High Potassium)</option>
+                            <option value="k_asc">🩺 โพแทสเซียมต่ำ (Low Potassium สำหรับไต)</option>
+                            <option value="na_asc">🧂 โซเดียมต่ำ (Low Sodium สำหรับความดัน/ไต)</option>
+                        </select>
+                    </div>
+                    <span class="text-[11px] text-gray-500" id="sort_result_count"></span>
+                </div>
             </div>
 
             <!-- Modal Content: Results & Plate Summary -->
@@ -584,7 +606,54 @@
                             <div>โปรตีน: <b id="plate_total_p" class="text-red-600">0</b>g</div>
                             <div>ไขมัน: <b id="plate_total_f" class="text-yellow-600">0</b>g</div>
                         </div>
+
+                        <!-- สรุปแร่ธาตุและวิตามินรวมในจาน -->
+                        <details class="pt-1.5 border-t text-[10px] text-gray-600">
+                            <summary class="cursor-pointer font-bold text-indigo-700 hover:underline flex items-center justify-between">
+                                <span>🔬 แร่ธาตุ & วิตามินรวมในจาน</span>
+                                <span class="text-[9px]">▼</span>
+                            </summary>
+                            <div class="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 text-[10px]">
+                                <div>🧂 โซเดียม: <b id="plate_total_na" class="text-gray-800">0</b> mg</div>
+                                <div>🫘 โพแทสเซียม: <b id="plate_total_k" class="text-gray-800">0</b> mg</div>
+                                <div>🦴 แคลเซียม: <b id="plate_total_ca" class="text-gray-800">0</b> mg</div>
+                                <div>🩸 ธาตุเหล็ก: <b id="plate_total_fe" class="text-gray-800">0</b> mg</div>
+                                <div>🍊 วิตามินซี: <b id="plate_total_vitc" class="text-gray-800">0</b> mg</div>
+                                <div>🌾 ใยอาหาร: <b id="plate_total_fiber" class="text-gray-800">0</b> g</div>
+                            </div>
+                        </details>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal รายละเอียดโภชนาการฉบับเต็ม (Full Nutrition Facts Modal) -->
+    <div id="nutrition_facts_modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-3 hidden no-print">
+        <div class="bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
+            <!-- Header -->
+            <div class="p-4 bg-gray-900 text-white flex justify-between items-start">
+                <div>
+                    <div class="text-[11px] text-gray-400" id="nft_group">กลุ่มอาหาร</div>
+                    <h3 class="font-bold text-lg leading-tight" id="nft_title">ชื่ออาหาร</h3>
+                    <div class="text-xs text-gray-300 italic" id="nft_en">English name</div>
+                </div>
+                <button onclick="closeNutritionFactsModal()" class="text-gray-400 hover:text-white text-2xl font-bold px-2">&times;</button>
+            </div>
+            <!-- Body -->
+            <div class="p-4 overflow-y-auto space-y-4 text-xs" id="nft_body">
+                <!-- Dynamic Nutrition Facts Table injected here -->
+            </div>
+            <!-- Footer -->
+            <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
+                <span class="text-[10px] text-gray-500">ที่มา: ตารางคุณค่าทางโภชนาการ สำนักโภชนาการ</span>
+                <div class="flex gap-2">
+                    <button id="nft_btn_add" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition">
+                        <span>➕ ใส่จาน</span>
+                    </button>
+                    <button onclick="closeNutritionFactsModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-3 py-1.5 rounded-xl text-xs transition">
+                        ปิด
+                    </button>
                 </div>
             </div>
         </div>
@@ -768,6 +837,7 @@
         let allFoods1306 = [];
         let currentCategoryFilter = 'all';
         let currentSearchQuery = '';
+        let currentNutrientSort = 'default';
         let myPlate = [];
 
         async function loadFoodsDatabase() {
@@ -815,8 +885,14 @@
             renderSearchResults();
         };
 
+        window.onNutrientSortChange = function(val) {
+            currentNutrientSort = val;
+            renderSearchResults();
+        };
+
         function renderSearchResults() {
             const container = document.getElementById('food_search_results');
+            const counter = document.getElementById('sort_result_count');
             if (!container) return;
 
             if (allFoods1306.length === 0) {
@@ -839,6 +915,45 @@
                 return true;
             });
 
+            // จัดเรียงตามสารอาหารที่เลือก
+            if (currentNutrientSort === 'kcal_desc') {
+                filtered.sort((a, b) => (b.kcal || 0) - (a.kcal || 0));
+            } else if (currentNutrientSort === 'kcal_asc') {
+                filtered.sort((a, b) => (a.kcal || 0) - (b.kcal || 0));
+            } else if (currentNutrientSort === 'p_desc') {
+                filtered.sort((a, b) => (b.p || 0) - (a.p || 0));
+            } else if (currentNutrientSort === 'fiber_desc') {
+                filtered.sort((a, b) => (b.fiber || 0) - (a.fiber || 0));
+            } else if (currentNutrientSort === 'ca_desc') {
+                filtered.sort((a, b) => (b.ca || 0) - (a.ca || 0));
+            } else if (currentNutrientSort === 'fe_desc') {
+                filtered.sort((a, b) => (b.fe || 0) - (a.fe || 0));
+            } else if (currentNutrientSort === 'vit_c_desc') {
+                filtered.sort((a, b) => (b.vit_c || 0) - (a.vit_c || 0));
+            } else if (currentNutrientSort === 'folate_desc') {
+                filtered.sort((a, b) => (b.folate || 0) - (a.folate || 0));
+            } else if (currentNutrientSort === 'k_desc') {
+                filtered.sort((a, b) => (b.k || 0) - (a.k || 0));
+            } else if (currentNutrientSort === 'k_asc') {
+                // สำหรับผู้ป่วยโรคไต: เรียงจากโพแทสเซียมต่ำสุดไปหาสูงสุด
+                filtered.sort((a, b) => {
+                    const valA = (a.k !== undefined && a.k > 0) ? a.k : 99999;
+                    const valB = (b.k !== undefined && b.k > 0) ? b.k : 99999;
+                    return valA - valB;
+                });
+            } else if (currentNutrientSort === 'na_asc') {
+                // สำหรับผู้ป่วยความดัน/ไต: เรียงจากโซเดียมต่ำสุดไปหาสูงสุด
+                filtered.sort((a, b) => {
+                    const valA = (a.na !== undefined && a.na > 0) ? a.na : 99999;
+                    const valB = (b.na !== undefined && b.na > 0) ? b.na : 99999;
+                    return valA - valB;
+                });
+            }
+
+            if (counter) {
+                counter.innerText = `พบ ${filtered.length.toLocaleString()} รายการ`;
+            }
+
             if (filtered.length === 0) {
                 container.innerHTML = '<p class="text-gray-400 text-center py-8 text-sm">ไม่พบรายการอาหารที่ค้นหา</p>';
                 return;
@@ -848,36 +963,221 @@
             const displayList = filtered.slice(0, 50);
             let html = '';
             displayList.forEach(f => {
+                // สร้าง Badges ไฮไลท์สารอาหารเด่น
+                let badges = [];
+                if (currentNutrientSort === 'ca_desc' || (f.ca && f.ca >= 50)) {
+                    badges.push(`<span class="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded border border-blue-200 font-semibold">🦴 แคลเซียม: ${f.ca} mg</span>`);
+                }
+                if (currentNutrientSort === 'fe_desc' || (f.fe && f.fe >= 1.5)) {
+                    badges.push(`<span class="bg-red-50 text-red-700 text-[10px] px-1.5 py-0.5 rounded border border-red-200 font-semibold">🩸 เหล็ก: ${f.fe} mg</span>`);
+                }
+                if (currentNutrientSort === 'k_desc' || currentNutrientSort === 'k_asc' || (f.k && f.k >= 200)) {
+                    badges.push(`<span class="bg-purple-50 text-purple-700 text-[10px] px-1.5 py-0.5 rounded border border-purple-200 font-semibold">🫘 โพแทสเซียม: ${f.k} mg</span>`);
+                }
+                if (currentNutrientSort === 'vit_c_desc' || (f.vit_c && f.vit_c >= 10)) {
+                    badges.push(`<span class="bg-orange-50 text-orange-700 text-[10px] px-1.5 py-0.5 rounded border border-orange-200 font-semibold">🍊 วิตามินซี: ${f.vit_c} mg</span>`);
+                }
+                if (currentNutrientSort === 'folate_desc' || (f.folate && f.folate >= 25)) {
+                    badges.push(`<span class="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded border border-green-200 font-semibold">🌿 โฟเลต: ${f.folate} µg</span>`);
+                }
+                if (currentNutrientSort === 'fiber_desc' || (f.fiber && f.fiber >= 3)) {
+                    badges.push(`<span class="bg-amber-50 text-amber-700 text-[10px] px-1.5 py-0.5 rounded border border-amber-200 font-semibold">🌾 ใยอาหาร: ${f.fiber} g</span>`);
+                }
+
                 html += `
-                    <div class="bg-white p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition flex justify-between items-center gap-2">
+                    <div class="bg-white p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-1.5 flex-wrap">
-                                <span class="font-bold text-gray-800 text-sm truncate">${f.name}</span>
+                                <span class="font-bold text-gray-900 text-sm">${f.name}</span>
                                 ${f.en ? `<span class="text-[11px] text-gray-400">(${f.en})</span>` : ''}
                                 <span class="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">ID: ${f.id} | กลุ่ม ${f.gid}</span>
                             </div>
-                            <div class="flex items-center gap-3 mt-1.5 text-xs">
-                                <span class="font-bold text-blue-600">${f.kcal} kcal</span>
-                                <span class="text-green-600 font-medium">C: ${f.c}g</span>
-                                <span class="text-red-600 font-medium">P: ${f.p}g</span>
-                                <span class="text-yellow-600 font-medium">F: ${f.f}g</span>
-                                ${f.na ? `<span class="text-gray-400 text-[10px]">โซเดียม: ${f.na}mg</span>` : ''}
+                            <div class="flex items-center gap-2.5 mt-1.5 text-xs flex-wrap">
+                                <span class="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">${f.kcal} kcal</span>
+                                <span class="text-green-700 font-medium">C: ${f.c}g</span>
+                                <span class="text-red-700 font-medium">P: ${f.p}g</span>
+                                <span class="text-yellow-700 font-medium">F: ${f.f}g</span>
+                                ${f.na ? `<span class="text-gray-500 text-[11px]">โซเดียม: ${f.na}mg</span>` : ''}
                                 <span class="text-gray-400 text-[10px]">ต่อ ${f.serving || '100g'}</span>
                             </div>
+                            ${badges.length > 0 ? `
+                                <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                    ${badges.join('')}
+                                </div>
+                            ` : ''}
                         </div>
-                        <button onclick="addToMyPlate('${f.id}')" class="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-800 p-2 rounded-lg font-bold text-xs flex items-center gap-1 transition">
-                            <span>➕ ใส่จาน</span>
-                        </button>
+                        <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                            <button onclick="openNutritionFactsModal('${f.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition" title="ดูฉลากโภชนาการฉบับเต็ม">
+                                <span>📊 ฉลากเต็ม</span>
+                            </button>
+                            <button onclick="addToMyPlate('${f.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition shadow-sm">
+                                <span>➕ ใส่จาน</span>
+                            </button>
+                        </div>
                     </div>
                 `;
             });
 
             if (filtered.length > 50) {
-                html += `<p class="text-center text-xs text-gray-400 py-2">แสดง 50 จากทั้งหมด ${filtered.length} รายการ (พิมพ์คำค้นหาให้เจาะจงขึ้นได้ครับ)</p>`;
+                html += `<p class="text-center text-xs text-gray-400 py-2">แสดง 50 จากทั้งหมด ${filtered.length.toLocaleString()} รายการ (พิมพ์คำค้นหาเพิ่มเติมได้ครับ)</p>`;
             }
 
             container.innerHTML = html;
         }
+
+        // ==========================================
+        // Modal รายละเอียดโภชนาการฉบับเต็ม (Full Nutrition Facts)
+        // ==========================================
+        window.openNutritionFactsModal = function(foodId) {
+            const food = allFoods1306.find(x => x.id === foodId);
+            if (!food) return;
+
+            const modal = document.getElementById('nutrition_facts_modal');
+            const title = document.getElementById('nft_title');
+            const en = document.getElementById('nft_en');
+            const group = document.getElementById('nft_group');
+            const body = document.getElementById('nft_body');
+            const btnAdd = document.getElementById('nft_btn_add');
+
+            title.innerText = food.name;
+            en.innerText = food.en || '';
+            group.innerText = `รหัสอาหาร: ${food.id} | กลุ่ม: ${food.gid}`;
+            btnAdd.onclick = () => {
+                addToMyPlate(food.id);
+                closeNutritionFactsModal();
+            };
+
+            body.innerHTML = `
+                <!-- ปริมาณและพลังงาน -->
+                <div class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 flex justify-between items-center">
+                    <div>
+                        <div class="text-[11px] text-indigo-900 font-bold">ขนาดส่วนบริโภค: ${food.serving || '100 กรัม'}</div>
+                        <div class="text-[10px] text-gray-500">คุณค่าทางโภชนาการต่อ 100 กรัมของอาหาร</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-black text-indigo-700">${food.kcal} kcal</div>
+                        <div class="text-[10px] text-gray-500">พลังงานทั้งหมด</div>
+                    </div>
+                </div>
+
+                <!-- สารอาหารหลัก (Macronutrients) -->
+                <div>
+                    <h5 class="font-bold text-gray-800 text-xs mb-1.5 pb-1 border-b border-gray-200 flex items-center gap-1">
+                        <span>🍱 สารอาหารหลัก (Macronutrients)</span>
+                    </h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                        <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                            <div class="text-gray-400 text-[10px]">คาร์โบไฮเดรต</div>
+                            <div class="font-bold text-green-700">${food.c || 0} g</div>
+                            <div class="text-[9px] text-gray-400">น้ำตาล: ${food.sugar || 0}g / ใย: ${food.fiber || 0}g</div>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                            <div class="text-gray-400 text-[10px]">โปรตีน</div>
+                            <div class="font-bold text-red-700">${food.p || 0} g</div>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                            <div class="text-gray-400 text-[10px]">ไขมัน</div>
+                            <div class="font-bold text-yellow-700">${food.f || 0} g</div>
+                            <div class="text-[9px] text-gray-400">คอเลสเตอรอล: ${food.chol || 0}mg</div>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                            <div class="text-gray-400 text-[10px]">โซเดียม</div>
+                            <div class="font-bold text-gray-800">${food.na || 0} mg</div>
+                            <div class="text-[9px] text-gray-400">น้ำ: ${food.water || 0}g</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- แร่ธาตุ (Minerals) -->
+                <div>
+                    <h5 class="font-bold text-gray-800 text-xs mb-1.5 pb-1 border-b border-gray-200 flex items-center gap-1">
+                        <span>🪨 แร่ธาตุ (Minerals)</span>
+                    </h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
+                        <div class="p-1.5 bg-blue-50/50 rounded border border-blue-100 flex justify-between">
+                            <span class="text-gray-600">แคลเซียม (Ca):</span>
+                            <b class="text-blue-800">${food.ca || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-red-50/50 rounded border border-red-100 flex justify-between">
+                            <span class="text-gray-600">ธาตุเหล็ก (Fe):</span>
+                            <b class="text-red-800">${food.fe || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-purple-50/50 rounded border border-purple-100 flex justify-between">
+                            <span class="text-gray-600">โพแทสเซียม (K):</span>
+                            <b class="text-purple-800">${food.k || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">ฟอสฟอรัส (P):</span>
+                            <b class="text-gray-800">${food.p_min || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">แมกนีเซียม (Mg):</span>
+                            <b class="text-gray-800">${food.mg || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">สังกะสี (Zn):</span>
+                            <b class="text-gray-800">${food.zn || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">ทองแดง (Cu):</span>
+                            <b class="text-gray-800">${food.cu || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">ไอโอดีน (I):</span>
+                            <b class="text-gray-800">${food.i || 0} µg</b>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- วิตามิน (Vitamins) -->
+                <div>
+                    <h5 class="font-bold text-gray-800 text-xs mb-1.5 pb-1 border-b border-gray-200 flex items-center gap-1">
+                        <span>🍊 วิตามิน (Vitamins)</span>
+                    </h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
+                        <div class="p-1.5 bg-orange-50/50 rounded border border-orange-100 flex justify-between">
+                            <span class="text-gray-600">วิตามินซี (C):</span>
+                            <b class="text-orange-800">${food.vit_c || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-amber-50/50 rounded border border-amber-100 flex justify-between">
+                            <span class="text-gray-600">วิตามินเอ (A RAE):</span>
+                            <b class="text-amber-800">${food.vit_a || 0} µg</b>
+                        </div>
+                        <div class="p-1.5 bg-green-50/50 rounded border border-green-100 flex justify-between">
+                            <span class="text-gray-600">โฟเลต (Folate):</span>
+                            <b class="text-green-800">${food.folate || 0} µg</b>
+                        </div>
+                        <div class="p-1.5 bg-yellow-50/50 rounded border border-yellow-100 flex justify-between">
+                            <span class="text-gray-600">เบต้าแคโรทีน:</span>
+                            <b class="text-yellow-800">${food.beta || 0} µg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">วิตามิน บี 1:</span>
+                            <b class="text-gray-800">${food.b1 || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">วิตามิน บี 2:</span>
+                            <b class="text-gray-800">${food.b2 || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">ไนอะซิน (B3):</span>
+                            <b class="text-gray-800">${food.b3 || 0} mg</b>
+                        </div>
+                        <div class="p-1.5 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                            <span class="text-gray-600">วิตามินอี (E):</span>
+                            <b class="text-gray-800">${food.vit_e || 0} mg</b>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeNutritionFactsModal = function() {
+            const modal = document.getElementById('nutrition_facts_modal');
+            if (modal) modal.classList.add('hidden');
+        };
 
         window.addToMyPlate = function(foodId) {
             const food = allFoods1306.find(x => x.id === foodId);
@@ -908,23 +1208,32 @@
 
             if (myPlate.length === 0) {
                 container.innerHTML = '<p class="text-gray-400 text-center py-6">ยังไม่มีอาหารในจาน<br>กดปุ่ม ➕ จากรายการซ้ายมือเพื่อเพิ่ม</p>';
-                updatePlateSummary(0, 0, 0, 0);
+                updatePlateSummary(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 return;
             }
 
             let html = '';
             let totalKcal = 0, totalC = 0, totalP = 0, totalF = 0;
+            let totalNa = 0, totalK = 0, totalCa = 0, totalFe = 0, totalVitC = 0, totalFiber = 0;
 
             myPlate.forEach(item => {
-                const itemKcal = Math.round(item.kcal * item.qty);
-                const itemC = Math.round(item.c * item.qty * 10) / 10;
-                const itemP = Math.round(item.p * item.qty * 10) / 10;
-                const itemF = Math.round(item.f * item.qty * 10) / 10;
+                const qty = item.qty || 1;
+                const itemKcal = Math.round((item.kcal || 0) * qty);
+                const itemC = Math.round((item.c || 0) * qty * 10) / 10;
+                const itemP = Math.round((item.p || 0) * qty * 10) / 10;
+                const itemF = Math.round((item.f || 0) * qty * 10) / 10;
 
                 totalKcal += itemKcal;
                 totalC += itemC;
                 totalP += itemP;
                 totalF += itemF;
+
+                totalNa += (item.na || 0) * qty;
+                totalK += (item.k || 0) * qty;
+                totalCa += (item.ca || 0) * qty;
+                totalFe += (item.fe || 0) * qty;
+                totalVitC += (item.vit_c || 0) * qty;
+                totalFiber += (item.fiber || 0) * qty;
 
                 html += `
                     <div class="bg-white p-2 rounded-lg border border-gray-200 flex justify-between items-center gap-1 text-xs">
@@ -941,21 +1250,35 @@
             });
 
             container.innerHTML = html;
-            updatePlateSummary(totalKcal, totalC, totalP, totalF);
+            updatePlateSummary(totalKcal, totalC, totalP, totalF, totalNa, totalK, totalCa, totalFe, totalVitC, totalFiber);
         }
 
-        function updatePlateSummary(kcal, c, p, f) {
+        function updatePlateSummary(kcal, c, p, f, na, k, ca, fe, vitc, fiber) {
             const elKcal = document.getElementById('plate_total_kcal');
             const elTarget = document.getElementById('plate_target_kcal');
             const elC = document.getElementById('plate_total_c');
             const elP = document.getElementById('plate_total_p');
             const elF = document.getElementById('plate_total_f');
 
+            const elNa = document.getElementById('plate_total_na');
+            const elK = document.getElementById('plate_total_k');
+            const elCa = document.getElementById('plate_total_ca');
+            const elFe = document.getElementById('plate_total_fe');
+            const elVitc = document.getElementById('plate_total_vitc');
+            const elFiber = document.getElementById('plate_total_fiber');
+
             if (elKcal) elKcal.innerText = `${Math.round(kcal)} kcal`;
             if (elTarget) elTarget.innerText = `${Math.round(currentTargetKcal || 0)} kcal`;
             if (elC) elC.innerText = Math.round(c);
             if (elP) elP.innerText = Math.round(p);
             if (elF) elF.innerText = Math.round(f);
+
+            if (elNa) elNa.innerText = Math.round(na || 0);
+            if (elK) elK.innerText = Math.round(k || 0);
+            if (elCa) elCa.innerText = Math.round(ca || 0);
+            if (elFe) elFe.innerText = (Math.round((fe || 0) * 10) / 10).toFixed(1);
+            if (elVitc) elVitc.innerText = Math.round(vitc || 0);
+            if (elFiber) elFiber.innerText = (Math.round((fiber || 0) * 10) / 10).toFixed(1);
         }
 
         // ==========================================
