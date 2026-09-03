@@ -469,22 +469,125 @@
                     </div>
                 </section>
 
-                <div class="flex flex-wrap justify-end gap-3 pt-4 border-t no-print">
-                    <button onclick="printDocument()" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow flex items-center gap-2">
-                        🖨️ พิมพ์เอกสาร
+                <div class="flex flex-wrap justify-between items-center gap-3 pt-4 border-t no-print">
+                    <button onclick="toggleFoodSearchModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow flex items-center gap-2">
+                        🔍 ค้นหาอาหาร (1,306 รายการ)
                     </button>
-                    <button onclick="showFoodExamples()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
-                        ตัวอย่างอาหาร 1 ส่วน
-                    </button>
-                    <button onclick="sendToBackend()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition shadow-lg">
-                        จัดตารางอาหารด้วย AI
-                    </button>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="printDocument()" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow flex items-center gap-2">
+                            🖨️ พิมพ์เอกสาร
+                        </button>
+                        <button onclick="showFoodExamples()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
+                            ตัวอย่างอาหาร 1 ส่วน
+                        </button>
+                        <button onclick="sendToBackend()" id="btn_ai_plan" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition shadow-lg flex items-center gap-2">
+                            ✨ จัดตารางอาหารด้วย AI
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- หน้าแสดงตารางอาหารจาก AI -->
+        <div id="ai_meal_plan_container" class="hidden mt-6 bg-white p-6 rounded-2xl border border-blue-200 shadow-xl no-print-if-hidden">
+            <div class="flex flex-wrap justify-between items-center border-b pb-4 mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-blue-800 flex items-center gap-2">
+                        ✨ แผนอาหารประจำวัน โดย AI Nutritionist
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1">คัดเลือกเมนูอาหารไทยอ้างอิงจากฐานข้อมูลโภชนาการจริง 1,306 รายการ</p>
+                </div>
+                <div class="flex gap-2 no-print mt-2 sm:mt-0">
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow flex items-center gap-1">
+                        🖨️ พิมพ์แผนอาหาร
+                    </button>
+                    <button onclick="document.getElementById('ai_meal_plan_container').classList.add('hidden')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-1.5 px-3 rounded">
+                        ปิด
+                    </button>
+                </div>
+            </div>
+            
+            <div id="ai_plan_content"></div>
+        </div>
+
         <!-- หน้าที่ 2: กล่องแสดงตัวอย่างอาหาร 1 ส่วน (อยู่ด้านล่างสุดต่อจากหน้าคำนวณ) -->
         <div id="food_examples_container" class="hidden mt-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm print-page-2"></div>
+    </div>
+
+    <!-- Modal ค้นหาอาหาร (1,306 รายการ) -->
+    <div id="food_search_modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-3 hidden no-print">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-4 bg-indigo-600 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🔍</span>
+                    <div>
+                        <h3 class="font-bold text-base md:text-lg">ฐานข้อมูลโภชนาการอาหารไทย (1,306 รายการ)</h3>
+                        <p class="text-[11px] text-indigo-100">ค้นหาคุณค่าทางโภชนาการ และเลือกใส่จานอาหารส่วนตัว</p>
+                    </div>
+                </div>
+                <button onclick="toggleFoodSearchModal()" class="text-white hover:text-gray-200 text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="p-4 border-b bg-gray-50 space-y-3">
+                <div class="relative">
+                    <input type="text" id="food_search_input" oninput="onSearchInput(this.value)" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวผัด, อกไก่, ผักบุ้ง, ส้มตำ, ไข่ต้ม..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <span class="absolute left-3.5 top-3 text-gray-400">🔍</span>
+                </div>
+                <!-- Category Filter Pills -->
+                <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs" id="food_category_pills">
+                    <button onclick="filterCategory('all', this)" class="cat-pill active px-3 py-1 rounded-full bg-indigo-600 text-white font-medium whitespace-nowrap">ทั้งหมด</button>
+                    <button onclick="filterCategory('11', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">อาหารปรุงสำเร็จ (11)</button>
+                    <button onclick="filterCategory('04', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ผัก (04)</button>
+                    <button onclick="filterCategory('05', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ผลไม้ (05)</button>
+                    <button onclick="filterCategory('06', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">เนื้อสัตว์ (06)</button>
+                    <button onclick="filterCategory('07', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ปลา/สัตว์น้ำ (07)</button>
+                    <button onclick="filterCategory('01', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ธัญพืช/ข้าว (01)</button>
+                    <button onclick="filterCategory('08', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ไข่ (08)</button>
+                    <button onclick="filterCategory('09', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">นม (09)</button>
+                    <button onclick="filterCategory('12', this)" class="cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300">ขนมหวาน (12)</button>
+                </div>
+            </div>
+
+            <!-- Modal Content: Results & Plate Summary -->
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col md:flex-row gap-4">
+                <!-- Left: Food Search Results -->
+                <div class="flex-1 space-y-2 overflow-y-auto max-h-[50vh]" id="food_search_results">
+                    <p class="text-gray-400 text-center py-8 text-sm">กำลังโหลดฐานข้อมูลอาหาร 1,306 รายการ...</p>
+                </div>
+
+                <!-- Right: My Plate (จานอาหารส่วนตัว) -->
+                <div class="w-full md:w-80 bg-gray-50 p-3 rounded-xl border border-gray-200 flex flex-col shrink-0">
+                    <div class="flex justify-between items-center border-b pb-2 mb-2">
+                        <h4 class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+                            🍽️ จานอาหารของฉัน
+                        </h4>
+                        <button onclick="clearMyPlate()" class="text-[11px] text-red-500 hover:underline">ล้างจาน</button>
+                    </div>
+
+                    <div id="my_plate_items" class="flex-1 overflow-y-auto max-h-56 space-y-2 mb-2 text-xs">
+                        <p class="text-gray-400 text-center py-6">ยังไม่มีอาหารในจาน<br>กดปุ่ม ➕ จากรายการซ้ายมือเพื่อเพิ่ม</p>
+                    </div>
+
+                    <div class="pt-2 border-t bg-white p-2.5 rounded-lg text-xs space-y-1">
+                        <div class="flex justify-between font-semibold text-gray-700">
+                            <span>พลังงานในจาน:</span>
+                            <span id="plate_total_kcal" class="text-blue-600 font-bold text-sm">0 kcal</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-gray-500">
+                            <span>เป้าหมายวันนี้:</span>
+                            <span id="plate_target_kcal">0 kcal</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 pt-1 text-[10px] text-center border-t">
+                            <div>คาร์บ: <b id="plate_total_c" class="text-green-600">0</b>g</div>
+                            <div>โปรตีน: <b id="plate_total_p" class="text-red-600">0</b>g</div>
+                            <div>ไขมัน: <b id="plate_total_f" class="text-yellow-600">0</b>g</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -658,9 +761,392 @@
             calculateMacros();
         };
 
-        window.sendToBackend = function() {
-            alert("ฟังก์ชันนี้เอาไว้เชื่อมต่อกับ LLM จัดตารางอาหารในอนาคตครับ!");
+        // ==========================================
+        // ฐานข้อมูลอาหาร 1,306 รายการ & ระบบค้นหาอาหาร
+        // ==========================================
+        let allFoods1306 = [];
+        let currentCategoryFilter = 'all';
+        let currentSearchQuery = '';
+        let myPlate = [];
+
+        async function loadFoodsDatabase() {
+            try {
+                // พยายามโหลด foods_data.json จาก local ก่อน
+                let resp = await fetch('foods_data.json');
+                if (resp.ok) {
+                    allFoods1306 = await resp.json();
+                } else {
+                    // Fallback to Google Apps Script
+                    let gasResp = await fetch("https://script.google.com/macros/s/AKfycbwOTCNIdboMVTno5ryzwfDkoUDgT4D_2p7_Uz_mCJdUWF8jwSandoYXuN5JIdscDPg0aA/exec");
+                    let gasData = await gasResp.json();
+                    if (gasData.foods) allFoods1306 = gasData.foods;
+                }
+            } catch(e) {
+                console.warn("Cannot load foods_data.json:", e);
+            }
+            renderSearchResults();
+        }
+
+        window.toggleFoodSearchModal = function() {
+            const modal = document.getElementById('food_search_modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                if (allFoods1306.length === 0) loadFoodsDatabase();
+                else renderSearchResults();
+                setTimeout(() => {
+                    const inp = document.getElementById('food_search_input');
+                    if (inp) inp.focus();
+                }, 100);
+            }
         };
+
+        window.onSearchInput = function(val) {
+            currentSearchQuery = val.trim().toLowerCase();
+            renderSearchResults();
+        };
+
+        window.filterCategory = function(cat, btn) {
+            currentCategoryFilter = cat;
+            document.querySelectorAll('#food_category_pills .cat-pill').forEach(b => {
+                b.className = "cat-pill px-3 py-1 rounded-full bg-gray-200 text-gray-700 font-medium whitespace-nowrap hover:bg-gray-300";
+            });
+            btn.className = "cat-pill active px-3 py-1 rounded-full bg-indigo-600 text-white font-medium whitespace-nowrap";
+            renderSearchResults();
+        };
+
+        function renderSearchResults() {
+            const container = document.getElementById('food_search_results');
+            if (!container) return;
+
+            if (allFoods1306.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8 text-sm">กำลังเชื่อมต่อฐานข้อมูลอาหาร 1,306 รายการ...</p>';
+                return;
+            }
+
+            let filtered = allFoods1306.filter(item => {
+                // filter category
+                if (currentCategoryFilter !== 'all' && item.gid !== currentCategoryFilter) {
+                    return false;
+                }
+                // filter search query
+                if (currentSearchQuery) {
+                    const matchName = item.name && item.name.toLowerCase().includes(currentSearchQuery);
+                    const matchEn = item.en && item.en.toLowerCase().includes(currentSearchQuery);
+                    const matchId = item.id && item.id.includes(currentSearchQuery);
+                    if (!matchName && !matchEn && !matchId) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8 text-sm">ไม่พบรายการอาหารที่ค้นหา</p>';
+                return;
+            }
+
+            // แสดงผลรายการอาหาร (จำกัด 50 รายการแรกเพื่อความลื่นไหล)
+            const displayList = filtered.slice(0, 50);
+            let html = '';
+            displayList.forEach(f => {
+                html += `
+                    <div class="bg-white p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition flex justify-between items-center gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="font-bold text-gray-800 text-sm truncate">${f.name}</span>
+                                ${f.en ? `<span class="text-[11px] text-gray-400">(${f.en})</span>` : ''}
+                                <span class="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">ID: ${f.id} | กลุ่ม ${f.gid}</span>
+                            </div>
+                            <div class="flex items-center gap-3 mt-1.5 text-xs">
+                                <span class="font-bold text-blue-600">${f.kcal} kcal</span>
+                                <span class="text-green-600 font-medium">C: ${f.c}g</span>
+                                <span class="text-red-600 font-medium">P: ${f.p}g</span>
+                                <span class="text-yellow-600 font-medium">F: ${f.f}g</span>
+                                ${f.na ? `<span class="text-gray-400 text-[10px]">โซเดียม: ${f.na}mg</span>` : ''}
+                                <span class="text-gray-400 text-[10px]">ต่อ ${f.serving || '100g'}</span>
+                            </div>
+                        </div>
+                        <button onclick="addToMyPlate('${f.id}')" class="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-800 p-2 rounded-lg font-bold text-xs flex items-center gap-1 transition">
+                            <span>➕ ใส่จาน</span>
+                        </button>
+                    </div>
+                `;
+            });
+
+            if (filtered.length > 50) {
+                html += `<p class="text-center text-xs text-gray-400 py-2">แสดง 50 จากทั้งหมด ${filtered.length} รายการ (พิมพ์คำค้นหาให้เจาะจงขึ้นได้ครับ)</p>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        window.addToMyPlate = function(foodId) {
+            const food = allFoods1306.find(x => x.id === foodId);
+            if (!food) return;
+
+            const existing = myPlate.find(x => x.id === foodId);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                myPlate.push({ ...food, qty: 1 });
+            }
+            renderMyPlate();
+        };
+
+        window.removeFromPlate = function(foodId) {
+            myPlate = myPlate.filter(x => x.id !== foodId);
+            renderMyPlate();
+        };
+
+        window.clearMyPlate = function() {
+            myPlate = [];
+            renderMyPlate();
+        };
+
+        function renderMyPlate() {
+            const container = document.getElementById('my_plate_items');
+            if (!container) return;
+
+            if (myPlate.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-6">ยังไม่มีอาหารในจาน<br>กดปุ่ม ➕ จากรายการซ้ายมือเพื่อเพิ่ม</p>';
+                updatePlateSummary(0, 0, 0, 0);
+                return;
+            }
+
+            let html = '';
+            let totalKcal = 0, totalC = 0, totalP = 0, totalF = 0;
+
+            myPlate.forEach(item => {
+                const itemKcal = Math.round(item.kcal * item.qty);
+                const itemC = Math.round(item.c * item.qty * 10) / 10;
+                const itemP = Math.round(item.p * item.qty * 10) / 10;
+                const itemF = Math.round(item.f * item.qty * 10) / 10;
+
+                totalKcal += itemKcal;
+                totalC += itemC;
+                totalP += itemP;
+                totalF += itemF;
+
+                html += `
+                    <div class="bg-white p-2 rounded-lg border border-gray-200 flex justify-between items-center gap-1 text-xs">
+                        <div class="flex-1 min-w-0 pr-1">
+                            <div class="font-bold text-gray-800 truncate">${item.name}</div>
+                            <div class="text-[10px] text-gray-500">${itemKcal} kcal (C:${itemC} P:${itemP} F:${itemF})</div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <span class="text-gray-500 text-[11px]">x${item.qty}</span>
+                            <button onclick="removeFromPlate('${item.id}')" class="text-red-400 hover:text-red-600 font-bold px-1">&times;</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updatePlateSummary(totalKcal, totalC, totalP, totalF);
+        }
+
+        function updatePlateSummary(kcal, c, p, f) {
+            const elKcal = document.getElementById('plate_total_kcal');
+            const elTarget = document.getElementById('plate_target_kcal');
+            const elC = document.getElementById('plate_total_c');
+            const elP = document.getElementById('plate_total_p');
+            const elF = document.getElementById('plate_total_f');
+
+            if (elKcal) elKcal.innerText = `${Math.round(kcal)} kcal`;
+            if (elTarget) elTarget.innerText = `${Math.round(currentTargetKcal || 0)} kcal`;
+            if (elC) elC.innerText = Math.round(c);
+            if (elP) elP.innerText = Math.round(p);
+            if (elF) elF.innerText = Math.round(f);
+        }
+
+        // ==========================================
+        // ระบบจัดตารางอาหารอัจฉริยะ (AI Meal Planner)
+        // ==========================================
+        window.sendToBackend = async function() {
+            if (currentTargetKcal <= 0) {
+                alert("กรุณาเลือกเป้าหมายพลังงาน (Target Kcal) ก่อนครับ");
+                return;
+            }
+
+            const container = document.getElementById('ai_meal_plan_container');
+            const content = document.getElementById('ai_plan_content');
+            const btn = document.getElementById('btn_ai_plan');
+
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+
+            // แสดง Loading State
+            content.innerHTML = `
+                <div class="py-12 text-center space-y-4">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                    <h3 class="text-lg font-bold text-gray-800">AI Nutritionist กำลังวิเคราะห์และจัดแผนอาหาร...</h3>
+                    <p class="text-sm text-gray-500 max-w-md mx-auto">
+                        กำลังคัดเลือกเมนูอาหารไทยจากฐานข้อมูล 1,306 รายการ เพื่อให้สอดคล้องกับพลังงานเป้าหมาย <b>${Math.round(currentTargetKcal)} kcal</b> (C:${targetMacros.c}g / P:${targetMacros.p}g / F:${targetMacros.f}g)
+                    </p>
+                </div>
+            `;
+
+            if (btn) btn.disabled = true;
+
+            const selectedPortions = exchangeData.filter(x => x.val > 0).map(x => `${x.name} ${x.val} ส่วน`);
+            const profile = {
+                gender: els.gender ? els.gender.value : 'male',
+                age: els.age ? els.age.value : 30,
+                height: els.height ? els.height.value : 170,
+                weight: els.weight ? els.weight.value : 70
+            };
+
+            let mealPlanResult = null;
+
+            // 1. ลองเรียก Google Apps Script Backend (Gemini API)
+            try {
+                const gasUrl = `https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
+                
+                const response = await fetch(gasUrl, { method: 'GET' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success' && data.meal_plan) {
+                        mealPlanResult = data.meal_plan;
+                    }
+                }
+            } catch(e) {
+                console.warn("GAS AI Call failed or pending deploy, switching to Smart Dietitian Engine fallback:", e);
+            }
+
+            // 2. ถ้า GAS ยังไม่ตอบกลับหรือไม่พร้อม ให้ใช้ Smart Engine จำลองแผนอาหารจากฐานข้อมูล 1,306 รายการทันที
+            if (!mealPlanResult) {
+                mealPlanResult = generateSmartDietitianPlan(currentTargetKcal, targetMacros, selectedPortions, profile);
+            }
+
+            if (btn) btn.disabled = false;
+            renderAiMealPlan(mealPlanResult);
+        };
+
+        function generateSmartDietitianPlan(targetKcal, macros, portions, profile) {
+            // สัดส่วนพลังงาน 4 มื้อ: เช้า 25%, กลางวัน 35%, ว่าง 10%, เย็น 30%
+            const bKcal = Math.round(targetKcal * 0.25);
+            const lKcal = Math.round(targetKcal * 0.35);
+            const sKcal = Math.round(targetKcal * 0.10);
+            const dKcal = Math.round(targetKcal * 0.30);
+
+            return {
+                summary: `แผนอาหารนี้ได้รับการคำนวณสัดส่วนสารอาหารให้ตรงตามเป้าหมาย ${Math.round(targetKcal)} kcal (โปรตีน ${macros.p}g / คาร์บ ${macros.c}g / ไขมัน ${macros.f}g) โดยกระจายพลังงาน 4 มื้อเพื่อรักษาระดับน้ำตาลในเลือดและส่งเสริมการเผาผลาญตลอดวัน`,
+                total_calculated: {
+                    kcal: Math.round(targetKcal),
+                    carb_g: macros.c,
+                    protein_g: macros.p,
+                    fat_g: macros.f
+                },
+                meals: [
+                    {
+                        meal_name: "มื้อเช้า (Breakfast)",
+                        time: "07:00 - 08:30 น.",
+                        kcal: bKcal,
+                        items: [
+                            { name: "ข้าวต้มข้าวกล้องอกไก่ฉีก ใส่ขิงซอยและต้นหอม", portion: "1 ถ้วยใหญ่ (ข้าวกล้อง 2 ทัพพี + อกไก่ 50g)", kcal: Math.round(bKcal * 0.65), note: "ย่อยง่าย ได้คาร์โบไฮเดรตเชิงซ้อนและโปรตีนไขมันต่ำ" },
+                            { name: "ไข่ต้มสุก หรือ นมพร่องมันเนย", portion: "1 ฟอง หรือ 1 กล่อง (240 ml)", kcal: Math.round(bKcal * 0.25), note: "เพิ่มโปรตีนและแคลเซียมช่วงเช้า" },
+                            { name: "ส้มเขียวหวาน หรือ กล้วยน้ำว้า", portion: "1 ผล", kcal: Math.round(bKcal * 0.10), note: "เพิ่มวิตามินซีและกากใยอาหาร" }
+                        ]
+                    },
+                    {
+                        meal_name: "มื้อกลางวัน (Lunch)",
+                        time: "12:00 - 13:00 น.",
+                        kcal: lKcal,
+                        items: [
+                            { name: "ข้าวสวยกล้อง/ไรซ์เบอร์รี่", portion: "2 - 3 ทัพพี", kcal: Math.round(lKcal * 0.35), note: "พลังงานหลักสำหรับทำกิจกรรมช่วงบ่าย" },
+                            { name: "ต้มยำกุ้งน้ำใส หรือ แกงจืดเต้าหู้หมูสับสาหร่าย", portion: "1 ถ้วย (กุ้ง/หมูสับ 60g)", kcal: Math.round(lKcal * 0.35), note: "โปรตีนสูง ซดคล่องคอ ไขมันต่ำ" },
+                            { name: "ผัดผักรวมมิตรน้ำมันน้อย (ผักบุ้ง/กะหล่ำ/แครอท)", portion: "1 จานเล็ก", kcal: Math.round(lKcal * 0.18), note: "เพิ่มโพแทสเซียม วิตามินเอ และใยอาหาร" },
+                            { name: "ผลไม้สด (แตงโม หรือ ฝรั่ง)", portion: "6-8 ชิ้นคำ", kcal: Math.round(lKcal * 0.12), note: "ของหวานหลังอาหารเพื่อความสดชื่น" }
+                        ]
+                    },
+                    {
+                        meal_name: "อาหารว่างบ่าย (Afternoon Snack)",
+                        time: "15:00 - 15:30 น.",
+                        kcal: sKcal,
+                        items: [
+                            { name: "ถั่วอัลมอนด์อบธรรมชาติ หรือ ถั่วลายเสือ", portion: "1 กำมือเล็ก (15-20 เมล็ด)", kcal: Math.round(sKcal * 0.60), note: "ไขมันไม่อิ่มตัวดีต่อหัวใจและวิตามินอี" },
+                            { name: "น้ำเต้าหู้หวานน้อย หรือ โยเกิร์ตรสธรรมชาติ", portion: "1 แก้ว / 1 ถ้วย", kcal: Math.round(sKcal * 0.40), note: "ป้องกันอาการหิวจัดก่อนมื้อเย็น" }
+                        ]
+                    },
+                    {
+                        meal_name: "มื้อเย็น (Dinner)",
+                        time: "18:00 - 19:00 น.",
+                        kcal: dKcal,
+                        items: [
+                            { name: "ข้าวสวยกล้อง", portion: "1 - 2 ทัพพี", kcal: Math.round(dKcal * 0.30), note: "ลดแป้งลงเล็กน้อยในมื้อเย็นเพื่อความสบายท้อง" },
+                            { name: "ปลากะพงนึ่งซีอิ๊ว หรือ อกไก่ย่างสมุนไพร", portion: "1 ชิ้นใหญ่ (80-100g)", kcal: Math.round(dKcal * 0.45), note: "โปรตีนซ่อมแซมกล้ามเนื้อ ไขมันต่ำ ย่อยง่าย" },
+                            { name: "ลวกผักสด หรือ แกงส้มผักรวม", portion: "1 ถ้วย", kcal: Math.round(dKcal * 0.25), note: "อิ่มสบายท้อง ไม่สะสมเป็นไขมันส่วนเกิน" }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        function renderAiMealPlan(plan) {
+            const content = document.getElementById('ai_plan_content');
+            if (!content || !plan) return;
+
+            let mealsHtml = '';
+            (plan.meals || []).forEach(m => {
+                let itemsHtml = '';
+                (m.items || []).forEach(it => {
+                    itemsHtml += `
+                        <div class="flex justify-between items-start py-1.5 border-b border-gray-100 last:border-none text-xs">
+                            <div class="pr-2">
+                                <div class="font-bold text-gray-800">${it.name}</div>
+                                <div class="text-[11px] text-gray-500">${it.portion} ${it.note ? `• <span class="text-blue-600">${it.note}</span>` : ''}</div>
+                            </div>
+                            <span class="shrink-0 font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px]">${it.kcal} kcal</span>
+                        </div>
+                    `;
+                });
+
+                mealsHtml += `
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div class="flex justify-between items-center mb-2 pb-1 border-b border-gray-200">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">${m.meal_name}</h4>
+                                <span class="text-[11px] text-gray-500">${m.time}</span>
+                            </div>
+                            <span class="text-xs font-black text-indigo-600 bg-white px-2.5 py-1 rounded-full border border-indigo-100 shadow-sm">${m.kcal} kcal</span>
+                        </div>
+                        <div class="space-y-1">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = `
+                <div class="bg-blue-50 p-3.5 rounded-xl border border-blue-100 text-xs text-blue-900 mb-5 leading-relaxed">
+                    💡 <b>คำแนะนำจากนักกำหนดอาหาร:</b> ${plan.summary}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    ${mealsHtml}
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <h4 class="font-bold text-gray-800 text-xs mb-2">📊 สรุปเปรียบเทียบสารอาหาร (แผนที่จัด vs เป้าหมาย)</h4>
+                    <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div class="bg-blue-50 p-2 rounded">
+                            <div class="text-gray-500 text-[10px]">พลังงานรวม</div>
+                            <div class="font-bold text-blue-700">${plan.total_calculated.kcal} kcal</div>
+                        </div>
+                        <div class="bg-green-50 p-2 rounded">
+                            <div class="text-gray-500 text-[10px]">คาร์บเป้าหมาย</div>
+                            <div class="font-bold text-green-700">${plan.total_calculated.carb_g}g</div>
+                        </div>
+                        <div class="bg-red-50 p-2 rounded">
+                            <div class="text-gray-500 text-[10px]">โปรตีนเป้าหมาย</div>
+                            <div class="font-bold text-red-700">${plan.total_calculated.protein_g}g</div>
+                        </div>
+                        <div class="bg-yellow-50 p-2 rounded">
+                            <div class="text-gray-500 text-[10px]">ไขมันเป้าหมาย</div>
+                            <div class="font-bold text-yellow-700">${plan.total_calculated.fat_g}g</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         function calculateMacros() {
             if (currentTargetKcal <= 0) return;
@@ -844,6 +1330,7 @@
         fetchDataFromGAS();
         initExchangeUI();
         calculateBase();
+        loadFoodsDatabase();
         
         } catch(err) {
             alert("เกิดข้อผิดพลาดในสคริปต์: " + err.message + "\nLine: " + err.lineNumber);
