@@ -8,181 +8,483 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
+        
+        @page {
+            size: A4 portrait;
+            margin: 6mm 8mm;
+        }
+
         @media print {
-            body { background: white; padding: 0; margin: 0; }
-            .max-w-5xl { box-shadow: none; border: none; max-width: 100%; margin: 0; }
-            button { display: none !important; }
-            #food_examples_container { page-break-before: always; padding-top: 20px; margin-top: 0; }
-            .bg-blue-600 { background-color: #2563eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .text-white { color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            input[type="range"] { display: none; }
-            .shadow-sm, .shadow-xl { box-shadow: none !important; }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            html, body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-family: 'Prompt', sans-serif !important;
+                color: #111827 !important;
+                font-size: 10.5px !important;
+            }
+
+            .max-w-5xl {
+                box-shadow: none !important;
+                border: none !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .no-print, button {
+                display: none !important;
+            }
+
+            /* --- หน้าที่ 1: ประวัติ และ การคำนวณพลังงาน สารอาหาร (ไม่เกิน A4 1 แผ่น) --- */
+            .print-page-1 {
+                page-break-after: always !important;
+                break-after: page !important;
+                height: 282mm !important;
+                max-height: 282mm !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+            }
+
+            .print-header {
+                padding: 6px 12px !important;
+                background-color: #2563eb !important;
+                color: white !important;
+                border-radius: 4px !important;
+                margin-bottom: 6px !important;
+            }
+
+            .print-header h1 {
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+            }
+
+            .print-header p {
+                font-size: 8.5px !important;
+                margin-top: 1px !important;
+                opacity: 0.9 !important;
+            }
+
+            .print-body {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .print-body.space-y-8 > :not([hidden]) ~ :not([hidden]),
+            .print-body.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 5px !important;
+            }
+
+            /* ส่วนข้อมูลส่วนตัว */
+            .print-info-grid {
+                display: grid !important;
+                grid-template-columns: repeat(5, 1fr) !important;
+                gap: 5px !important;
+            }
+
+            .print-info-grid label {
+                font-size: 9px !important;
+                margin-bottom: 1px !important;
+                font-weight: 600 !important;
+            }
+
+            .print-info-grid input,
+            .print-info-grid select {
+                padding: 1px 4px !important;
+                font-size: 10px !important;
+                height: 24px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 4px !important;
+                background: white !important;
+            }
+
+            /* ผลลัพธ์ BMR/TDEE/BMI/IBW */
+            .print-results {
+                padding: 4px 8px !important;
+                border-radius: 4px !important;
+                background-color: #f1f5f9 !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .print-results .text-xs {
+                font-size: 8.5px !important;
+            }
+
+            .print-results .text-lg {
+                font-size: 12px !important;
+                line-height: 1.1 !important;
+            }
+
+            .print-results #bmi_desc {
+                height: auto !important;
+                font-size: 8px !important;
+                margin-top: 1px !important;
+            }
+
+            /* แบ่ง 2 คอลัมน์ ซ้าย-ขวา */
+            .print-main-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1.2fr !important;
+                gap: 8px !important;
+            }
+
+            /* คอลัมน์ซ้าย: เป้าหมาย & สารอาหาร */
+            .print-left-col {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 4px !important;
+            }
+
+            .print-left-col h2 {
+                font-size: 10.5px !important;
+                margin-bottom: 2px !important;
+            }
+
+            #goal_options {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 2px !important;
+            }
+
+            #goal_options label {
+                padding: 2px 5px !important;
+                font-size: 9px !important;
+                border-radius: 4px !important;
+            }
+
+            .print-macro-box {
+                padding: 5px 7px !important;
+                border-radius: 4px !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .print-macro-box .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 3px !important;
+            }
+
+            .print-macro-box input[type="range"] {
+                display: none !important;
+            }
+
+            .print-macro-box .text-sm {
+                font-size: 9.5px !important;
+            }
+
+            .print-macro-box .text-xs {
+                font-size: 8.5px !important;
+            }
+
+            .print-macro-box #out_total_kcal {
+                font-size: 15px !important;
+                line-height: 1.1 !important;
+            }
+
+            /* คอลัมน์ขวา: ส่วนอาหาร Exchange List (แสดง 2 คอลัมน์ย่อย 12 หมวด) */
+            .print-right-col {
+                padding: 5px 7px !important;
+                border-radius: 4px !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .print-right-col h2 {
+                font-size: 10.5px !important;
+                margin-bottom: 2px !important;
+                padding-bottom: 2px !important;
+            }
+
+            .print-desc {
+                display: none !important;
+            }
+
+            #exchange_list {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 2.5px !important;
+            }
+
+            #exchange_list > div {
+                padding: 2px 4px !important;
+                font-size: 9px !important;
+                border-radius: 4px !important;
+                border: 1px solid #e2e8f0 !important;
+                background-color: white !important;
+            }
+
+            #exchange_list .font-bold.text-gray-700 {
+                font-size: 9px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+
+            #exchange_list .text-\[10px\] {
+                font-size: 7.5px !important;
+                line-height: 1 !important;
+            }
+
+            .print-summary-box {
+                margin-top: 4px !important;
+                padding: 3px 5px !important;
+                border-radius: 4px !important;
+            }
+
+            .print-summary-box .text-xs {
+                font-size: 8.5px !important;
+                margin-bottom: 1px !important;
+            }
+
+            .print-summary-box .text-\[10px\] {
+                font-size: 7.5px !important;
+            }
+
+            .print-summary-box .font-bold {
+                font-size: 10.5px !important;
+            }
+
+            /* --- หน้าที่ 2: ตัวอย่างปริมาณอาหาร 1 ส่วน (ไม่เกิน A4 1 แผ่น) --- */
+            .print-page-2 {
+                page-break-before: always !important;
+                break-before: page !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+                height: 282mm !important;
+                max-height: 282mm !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+                padding: 2px 4px !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: white !important;
+            }
+
+            .print-page-2-header {
+                font-size: 12.5px !important;
+                font-weight: 700 !important;
+                border-bottom: 1.5px solid #2563eb !important;
+                padding-bottom: 2px !important;
+                margin-bottom: 5px !important;
+                color: #1e3a8a !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+            }
+
+            .print-examples-grid {
+                display: block !important;
+                column-count: 3 !important;
+                column-gap: 7px !important;
+                height: calc(100% - 25px) !important;
+            }
+
+            .example-category-card {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                margin-bottom: 5px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 4px !important;
+                padding: 3px 5px !important;
+                background: #f8fafc !important;
+            }
+
+            .example-category-card h3 {
+                font-size: 10px !important;
+                font-weight: 700 !important;
+                color: #1d4ed8 !important;
+                border-bottom: 1px solid #bfdbfe !important;
+                padding-bottom: 1px !important;
+                margin-bottom: 2px !important;
+            }
+
+            .example-category-card ul {
+                font-size: 8.5px !important;
+                line-height: 1.2 !important;
+                color: #334155 !important;
+            }
+
+            .example-category-card li {
+                margin-bottom: 1.5px !important;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 p-4 md:p-8">
-    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div class="bg-blue-600 p-6 text-white text-center">
-            <h1 class="text-2xl md:text-3xl font-bold">ระบบคำนวณพลังงานและส่วนอาหาร (Food Exchange)</h1>
-            <p class="opacity-80 mt-2">Deterministic Engine + Macro Distribution + Portion Control</p>
-        </div>
-
-        <div class="p-6 md:p-8 space-y-8">
-            <!-- ข้อมูลส่วนตัว -->
-            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">เพศ</label>
-                    <select id="gender" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
-                        <option value="male">ชาย</option>
-                        <option value="female">หญิง</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">อายุ (ปี)</label>
-                    <input type="number" id="age" value="30" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ส่วนสูง (ซม.)</label>
-                    <input type="number" id="height" value="170" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">น้ำหนัก (กก.)</label>
-                    <input type="number" id="weight" value="70" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">กิจกรรม</label>
-                    <select id="activity" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
-                        <option value="1.2">ไม่ออกกำลังกาย</option>
-                        <option value="1.375">เบาๆ (1-3 วัน/สัปดาห์)</option>
-                        <option value="1.55">ปานกลาง (3-5 วัน)</option>
-                        <option value="1.725">หนัก (6-7 วัน)</option>
-                        <option value="1.9">หนักมาก (ทุกวัน)</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- ผลลัพธ์เบื้องต้น -->
-            <section class="bg-gray-100 p-4 rounded-xl border border-gray-200">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                        <div class="text-xs text-gray-500">IBW (กก.)</div>
-                        <div id="res_ibw" class="text-lg font-bold text-blue-600">-</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500">BMI</div>
-                        <div id="res_bmi" class="text-lg font-bold text-blue-600">-</div>
-                        <div id="bmi_desc" class="text-[10px] text-gray-600 mt-1 h-8"></div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500">BMR (kcal)</div>
-                        <div id="res_bmr" class="text-lg font-bold text-blue-600">-</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500">TDEE (kcal)</div>
-                        <div id="res_tdee" class="text-lg font-bold text-blue-600">-</div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- คอลัมน์ซ้าย: เป้าหมาย & สัดส่วน Macro -->
-                <div class="space-y-6">
-                    <div class="border-l-4 border-blue-500 pl-4">
-                        <h2 class="text-md font-bold text-gray-800 mb-2">เป้าหมายพลังงาน (Target Kcal)</h2>
-                        <div class="flex flex-col gap-2" id="goal_options"></div>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                        <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">1. สัดส่วนสารอาหารเป้าหมาย</h2>
-                        
-                        <div class="space-y-5">
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <label class="font-semibold text-red-600">โปรตีน (Protein)</label>
-                                    <div class="text-right">
-                                        <span id="val_pro_gkg" class="font-bold">1.0 g/kg</span>
-                                        <span id="val_pro_pct" class="text-xs text-gray-500 ml-1">(0%)</span>
-                                    </div>
-                                </div>
-                                <input type="range" id="slide_pro" min="0.6" max="2.5" step="0.1" value="1.0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                                <div class="text-right text-xs mt-1"><span id="out_pro_g" class="text-red-600 font-bold">0</span> กรัม (<span id="out_pro_kcal">0</span> kcal)</div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <label class="font-semibold text-yellow-500">ไขมัน (Fat)</label>
-                                    <span id="val_fat_pct" class="font-bold">25%</span>
-                                </div>
-                                <input type="range" id="slide_fat" min="20" max="30" step="1" value="25" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                                <div class="text-right text-xs mt-1"><span id="out_fat_g" class="text-yellow-600 font-bold">0</span> กรัม (<span id="out_fat_kcal">0</span> kcal)</div>
-                            </div>
-                            <div class="bg-green-50 p-2 rounded border border-green-100">
-                                <div class="flex justify-between text-sm">
-                                    <label class="font-semibold text-green-700">คาร์โบไฮเดรต (Carb)</label>
-                                    <span id="val_carb_pct" class="font-bold text-green-800">0%</span>
-                                </div>
-                                <div class="text-right text-xs mt-1"><span id="out_carb_g" class="text-green-700 font-bold">0</span> กรัม (<span id="out_carb_kcal">0</span> kcal)</div>
-                            </div>
-                        </div>
-
-                        <!-- สรุปพลังงานเป้าหมายรวม -->
-                        <div class="mt-5 pt-3 border-t border-gray-200 text-center">
-                            <p class="text-gray-500 text-xs">พลังงานเป้าหมายทั้งหมดที่เลือก</p>
-                            <div class="text-2xl font-black text-gray-800" id="out_total_kcal">0 <span class="text-sm font-normal text-gray-500">kcal</span></div>
-                            <div id="macro_warning" class="text-red-500 text-xs font-bold mt-2 hidden">⚠️ พลังงานจากโปรตีน+ไขมัน เกินเป้าหมาย!</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- คอลัมน์ขวา: การคำนวณส่วนอาหาร (Food Exchange) -->
-                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col">
-                    <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">2. กำหนดส่วนอาหาร (Portion Control)</h2>
-                    <p class="text-xs text-gray-500 mb-4">ปรับจำนวนส่วน (ทัพพี, ช้อนโต๊ะ, แก้ว) ให้สารอาหารรวมใกล้เคียงเป้าหมายทางซ้ายมือ</p>
-                    
-                    <div class="space-y-3 flex-1 overflow-y-auto">
-                        <!-- รายการหมวดอาหาร (ดึงข้อมูลจาก GAS/Excel) -->
-                        <div id="exchange_list"></div>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-t bg-gray-50 rounded-lg p-3">
-                        <div class="text-xs font-bold text-gray-700 mb-2">สรุปสารอาหารจากการเลือกส่วน (คำนวณจริง)</div>
-                        <div class="grid grid-cols-4 gap-2 text-center text-sm">
-                            <div>
-                                <div class="text-gray-500 text-[10px]">คาร์บ (g)</div>
-                                <div id="act_carb" class="font-bold text-green-600">0</div>
-                            </div>
-                            <div>
-                                <div class="text-gray-500 text-[10px]">โปรตีน (g)</div>
-                                <div id="act_pro" class="font-bold text-red-600">0</div>
-                            </div>
-                            <div>
-                                <div class="text-gray-500 text-[10px]">ไขมัน (g)</div>
-                                <div id="act_fat" class="font-bold text-yellow-600">0</div>
-                            </div>
-                            <div>
-                                <div class="text-gray-500 text-[10px]">พลังงาน</div>
-                                <div id="act_kcal" class="font-bold text-blue-600">0</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- แถบปุ่มคำสั่ง -->
-            <div class="flex flex-wrap justify-end gap-3 pt-4 border-t">
-                <button onclick="window.print()" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow flex items-center gap-2">
-                    🖨️ พิมพ์เอกสาร
-                </button>
-                <button onclick="showFoodExamples()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
-                    ตัวอย่างอาหาร 1 ส่วน
-                </button>
-                <button onclick="sendToBackend()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition shadow-lg">
-                    จัดตารางอาหารด้วย AI
-                </button>
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden print:shadow-none print:rounded-none">
+        <!-- หน้าที่ 1: ประวัติ และ การคำนวณพลังงาน สารอาหาร -->
+        <div id="page_calc" class="print-page-1">
+            <div class="bg-blue-600 p-6 text-white text-center print-header">
+                <h1 class="text-2xl md:text-3xl font-bold">ระบบคำนวณพลังงานและส่วนอาหาร (Food Exchange)</h1>
+                <p class="opacity-80 mt-2">Deterministic Engine + Macro Distribution + Portion Control</p>
             </div>
 
-            <!-- กล่องแสดงตัวอย่างอาหาร 1 ส่วน (อยู่ด้านล่างสุดต่อจากปุ่มเมนู) -->
-            <div id="food_examples_container" class="hidden mt-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm"></div>
+            <div class="p-6 md:p-8 space-y-8 print-body">
+                <!-- ข้อมูลส่วนตัว -->
+                <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 print-info-grid">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เพศ</label>
+                        <select id="gender" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                            <option value="male">ชาย</option>
+                            <option value="female">หญิง</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">อายุ (ปี)</label>
+                        <input type="number" id="age" value="30" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ส่วนสูง (ซม.)</label>
+                        <input type="number" id="height" value="170" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">น้ำหนัก (กก.)</label>
+                        <input type="number" id="weight" value="70" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">กิจกรรม</label>
+                        <select id="activity" class="w-full border-gray-300 rounded-lg shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                            <option value="1.2">ไม่ออกกำลังกาย</option>
+                            <option value="1.375">เบาๆ (1-3 วัน/สัปดาห์)</option>
+                            <option value="1.55">ปานกลาง (3-5 วัน)</option>
+                            <option value="1.725">หนัก (6-7 วัน)</option>
+                            <option value="1.9">หนักมาก (ทุกวัน)</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- ผลลัพธ์เบื้องต้น -->
+                <section class="bg-gray-100 p-4 rounded-xl border border-gray-200 print-results">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <div class="text-xs text-gray-500">IBW (กก.)</div>
+                            <div id="res_ibw" class="text-lg font-bold text-blue-600">-</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500">BMI</div>
+                            <div id="res_bmi" class="text-lg font-bold text-blue-600">-</div>
+                            <div id="bmi_desc" class="text-[10px] text-gray-600 mt-1 h-8"></div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500">BMR (kcal)</div>
+                            <div id="res_bmr" class="text-lg font-bold text-blue-600">-</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500">TDEE (kcal)</div>
+                            <div id="res_tdee" class="text-lg font-bold text-blue-600">-</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 print-main-grid">
+                    <!-- คอลัมน์ซ้าย: เป้าหมาย & สัดส่วน Macro -->
+                    <div class="space-y-6 print-left-col">
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h2 class="text-md font-bold text-gray-800 mb-2">เป้าหมายพลังงาน (Target Kcal)</h2>
+                            <div class="flex flex-col gap-2" id="goal_options"></div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm print-macro-box">
+                            <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">1. สัดส่วนสารอาหารเป้าหมาย</h2>
+                            
+                            <div class="space-y-5">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <label class="font-semibold text-red-600">โปรตีน (Protein)</label>
+                                        <div class="text-right">
+                                            <span id="val_pro_gkg" class="font-bold">1.0 g/kg</span>
+                                            <span id="val_pro_pct" class="text-xs text-gray-500 ml-1">(0%)</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="slide_pro" min="0.6" max="2.5" step="0.1" value="1.0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                    <div class="text-right text-xs mt-1"><span id="out_pro_g" class="text-red-600 font-bold">0</span> กรัม (<span id="out_pro_kcal">0</span> kcal)</div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <label class="font-semibold text-yellow-500">ไขมัน (Fat)</label>
+                                        <span id="val_fat_pct" class="font-bold">25%</span>
+                                    </div>
+                                    <input type="range" id="slide_fat" min="20" max="30" step="1" value="25" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                    <div class="text-right text-xs mt-1"><span id="out_fat_g" class="text-yellow-600 font-bold">0</span> กรัม (<span id="out_fat_kcal">0</span> kcal)</div>
+                                </div>
+                                <div class="bg-green-50 p-2 rounded border border-green-100">
+                                    <div class="flex justify-between text-sm">
+                                        <label class="font-semibold text-green-700">คาร์โบไฮเดรต (Carb)</label>
+                                        <span id="val_carb_pct" class="font-bold text-green-800">0%</span>
+                                    </div>
+                                    <div class="text-right text-xs mt-1"><span id="out_carb_g" class="text-green-700 font-bold">0</span> กรัม (<span id="out_carb_kcal">0</span> kcal)</div>
+                                </div>
+                            </div>
+
+                            <!-- สรุปพลังงานเป้าหมายรวม -->
+                            <div class="mt-5 pt-3 border-t border-gray-200 text-center">
+                                <p class="text-gray-500 text-xs">พลังงานเป้าหมายทั้งหมดที่เลือก</p>
+                                <div class="text-2xl font-black text-gray-800" id="out_total_kcal">0 <span class="text-sm font-normal text-gray-500">kcal</span></div>
+                                <div id="macro_warning" class="text-red-500 text-xs font-bold mt-2 hidden">⚠️ พลังงานจากโปรตีน+ไขมัน เกินเป้าหมาย!</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- คอลัมน์ขวา: การคำนวณส่วนอาหาร (Food Exchange) -->
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col print-right-col">
+                        <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">2. กำหนดส่วนอาหาร (Portion Control)</h2>
+                        <p class="text-xs text-gray-500 mb-4 print-desc">ปรับจำนวนส่วน (ทัพพี, ช้อนโต๊ะ, แก้ว) ให้สารอาหารรวมใกล้เคียงเป้าหมายทางซ้ายมือ</p>
+                        
+                        <div class="space-y-3 flex-1 overflow-y-auto">
+                            <!-- รายการหมวดอาหาร (ดึงข้อมูลจาก GAS/Excel) -->
+                            <div id="exchange_list"></div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t bg-gray-50 rounded-lg p-3 print-summary-box">
+                            <div class="text-xs font-bold text-gray-700 mb-2">สรุปสารอาหารจากการเลือกส่วน (คำนวณจริง)</div>
+                            <div class="grid grid-cols-4 gap-2 text-center text-sm">
+                                <div>
+                                    <div class="text-gray-500 text-[10px]">คาร์บ (g)</div>
+                                    <div id="act_carb" class="font-bold text-green-600">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500 text-[10px]">โปรตีน (g)</div>
+                                    <div id="act_pro" class="font-bold text-red-600">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500 text-[10px]">ไขมัน (g)</div>
+                                    <div id="act_fat" class="font-bold text-yellow-600">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500 text-[10px]">พลังงาน</div>
+                                    <div id="act_kcal" class="font-bold text-blue-600">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex flex-wrap justify-end gap-3 pt-4 border-t no-print">
+                    <button onclick="printDocument()" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow flex items-center gap-2">
+                        🖨️ พิมพ์เอกสาร
+                    </button>
+                    <button onclick="showFoodExamples()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow">
+                        ตัวอย่างอาหาร 1 ส่วน
+                    </button>
+                    <button onclick="sendToBackend()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition shadow-lg">
+                        จัดตารางอาหารด้วย AI
+                    </button>
+                </div>
+            </div>
         </div>
+
+        <!-- หน้าที่ 2: กล่องแสดงตัวอย่างอาหาร 1 ส่วน (อยู่ด้านล่างสุดต่อจากหน้าคำนวณ) -->
+        <div id="food_examples_container" class="hidden mt-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm print-page-2"></div>
     </div>
 
     <script>
@@ -209,7 +511,7 @@
         let targetMacros = { c:0, p:0, f:0 };
         let globalFoodItems = [];
 
-        // ข้อมูล Food Exchange List เริ่มต้น
+        // ข้อมูล Food Exchange List อ้างอิงจาก test.xlsx
         const exchangeData = [
             { id: 'milk_skim', name: 'นมขาดมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 0, kcal: 80, val: 0 },
             { id: 'milk_lowfat', name: 'นมพร่องมันเนย', unit: 'กล่อง', c: 12, p: 8, f: 5, kcal: 125, val: 0 },
@@ -225,45 +527,6 @@
             { id: 'fat', name: 'ไขมัน', unit: 'ช้อนชา', c: 0, p: 0, f: 5, kcal: 45, val: 4 }
         ];
 
-        window.fetchDataFromGAS = async function() {
-            try {
-                const url = "https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec";
-                const response = await fetch(url);
-                const text = await response.text();
-                
-                if(text.includes('Backend is running!')){
-                    console.warn('Backend GAS script not fully deployed.');
-                    return;
-                }
-                
-                const json = JSON.parse(text);
-                if (json.status === "success" && json.exchange_list && json.exchange_list.length > 0) {
-                    exchangeData.length = 0; // clear old data
-                    for (let i = 0; i < json.exchange_list.length; i++) {
-                        const item = json.exchange_list[i];
-                        exchangeData.push({
-                            id: item.name,
-                            name: item.name,
-                            unit: item.unit,
-                            c: item.c,
-                            p: item.p,
-                            f: item.f,
-                            kcal: item.kcal,
-                            val: 0 // เริ่มต้นที่ 0 ส่วน
-                        });
-                    }
-                    
-                    initExchangeUI(); 
-                    
-                    if (json.food_items && json.food_items.length > 0) {
-                        globalFoodItems = json.food_items;
-                    }
-                }
-            } catch(e) {
-                console.error("Error fetching GAS data:", e);
-            }
-        }
-
         function initExchangeUI() {
             els.exchange_list.innerHTML = '';
             for (let index = 0; index < exchangeData.length; index++) {
@@ -275,9 +538,10 @@
                         <div class="font-bold text-gray-700">${item.name}</div>
                         <div class="text-[10px] text-gray-400">C:${item.c} P:${item.p} F:${item.f} (${item.kcal} kcal) / 1 ${item.unit}</div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1">
                         <button onclick="updatePortion(${index}, -1)" class="w-6 h-6 bg-gray-200 rounded flex items-center justify-center font-bold text-gray-600 hover:bg-gray-300">-</button>
-                        <span class="w-6 text-center font-bold" id="val_ex_${index}">${item.val}</span>
+                        <span class="w-6 text-center font-bold text-blue-700" id="val_ex_${index}">${item.val}</span>
+                        <span class="text-xs text-gray-500 mr-1">${item.unit}</span>
                         <button onclick="updatePortion(${index}, 1)" class="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center font-bold hover:bg-blue-200">+</button>
                     </div>
                 `;
@@ -436,17 +700,56 @@
             calculateActualExchange();
         }
 
-        window.showFoodExamples = function() {
+        window.fetchDataFromGAS = async function() {
+            try {
+                const url = "https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec";
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                if(text.includes('Backend is running!')){
+                    console.warn('Backend GAS script not fully deployed.');
+                    return;
+                }
+                
+                const json = JSON.parse(text);
+                if (json.status === "success" && json.exchange_list && json.exchange_list.length > 0) {
+                    // Update global exchangeData
+                    exchangeData.length = 0; // clear old data
+                    for (let i = 0; i < json.exchange_list.length; i++) {
+                        const item = json.exchange_list[i];
+                        exchangeData.push({
+                            id: item.name,
+                            name: item.name,
+                            unit: item.unit,
+                            c: item.c,
+                            p: item.p,
+                            f: item.f,
+                            kcal: item.kcal,
+                            val: 0 // เริ่มต้นที่ 0 ส่วน
+                        });
+                    }
+                    
+                    initExchangeUI(); // Render หน้า UI ใหม่ด้วยข้อมูลจาก Google Sheets
+                    
+                    if (json.food_items && json.food_items.length > 0) {
+                        globalFoodItems = json.food_items;
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        window.showFoodExamples = function(shouldScroll = true) {
             if (globalFoodItems.length === 0) {
-                alert("กำลังรอข้อมูลจาก Google Sheets... หรือไม่มีข้อมูล");
+                if (shouldScroll) alert("กำลังรอข้อมูลจาก Google Sheets... หรือไม่มีข้อมูล");
                 return;
             }
             
-            // หาหมวดอาหารที่ผู้ใช้เลือกแบบ Exact Match (จำนวนส่วน > 0)
+            // หาหมวดอาหารที่ผู้ใช้เลือก (จำนวนส่วน > 0)
             const selectedGroups = [];
             for (let i = 0; i < exchangeData.length; i++) {
                 if (exchangeData[i].val > 0) {
-                    // ตัดคำว่า สัตว์ ออกเพื่อให้เหมือนกับ data3
                     selectedGroups.push(exchangeData[i].name.replace('สัตว์', '').trim());
                 }
             }
@@ -456,8 +759,13 @@
                 container.classList.remove('hidden');
             }
             
-            let html = '<h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">ตัวอย่างปริมาณอาหาร 1 ส่วน (เฉพาะหมวดที่คุณเลือก)</h2>';
-            html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
+            let html = `
+                <div class="print-page-2-header flex justify-between items-center mb-3 border-b pb-2">
+                    <h2 class="text-xl font-bold text-gray-800">ตัวอย่างปริมาณอาหาร 1 ส่วน (เฉพาะหมวดที่คุณเลือก)</h2>
+                    <span class="text-xs text-gray-500 hidden print:inline font-normal">หน้า 2 / 2</span>
+                </div>
+            `;
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print-examples-grid">';
             
             // Group by category (new data3 format)
             const grouped = {};
@@ -472,11 +780,11 @@
             let hasMatch = false;
 
             for (const cat in grouped) {
-                // Check if this category matches selected groups exactly (100% Match)
+                // Check if this category matches selected groups exactly
                 const catClean = cat.replace('สัตว์', '').trim();
                 if (selectedGroups.indexOf(catClean) !== -1) {
                     hasMatch = true;
-                    html += `<div><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${cat}</h3><ul class="text-sm space-y-2 text-gray-600">`;
+                    html += `<div class="example-category-card bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h3 class="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">${cat}</h3><ul class="text-sm space-y-2 text-gray-600">`;
                     for (let k = 0; k < grouped[cat].length; k++) {
                         const food = grouped[cat][k];
                         if (food.name) {
@@ -496,8 +804,25 @@
             }
             
             container.innerHTML = html;
-            container.scrollIntoView({ behavior: 'smooth' });
+            if (shouldScroll) {
+                container.scrollIntoView({ behavior: 'smooth' });
+            }
         };
+
+        window.printDocument = function() {
+            if (globalFoodItems.length > 0) {
+                showFoodExamples(false);
+            }
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        };
+
+        window.addEventListener('beforeprint', function() {
+            if (globalFoodItems.length > 0) {
+                showFoodExamples(false);
+            }
+        });
 
         const inputIds = ['gender', 'age', 'height', 'weight', 'activity'];
         for (let i = 0; i < inputIds.length; i++) {
@@ -512,7 +837,7 @@
         calculateBase();
         
         } catch(err) {
-            alert("ถ้าคุณเห็นข้อความนี้ แสดงว่าหน้าเว็บมีปัญหา: " + err.message + "\n\n(ลองก๊อปปี้โค้ดใหม่ทั้งหมดไปวางทับอีกครั้งนะครับ)");
+            alert("เกิดข้อผิดพลาดในสคริปต์: " + err.message + "\nLine: " + err.lineNumber);
             console.error(err);
         }
     </script>
