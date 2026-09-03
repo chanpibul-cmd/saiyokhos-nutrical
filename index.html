@@ -961,11 +961,6 @@
         // ==========================================
         // ระบบจัดตารางอาหารอัจฉริยะ (AI Meal Planner)
         // ==========================================
-        // ==========================================
-        // ระบบจัดตารางอาหารอัจฉริยะ (AI Meal Planner)
-        // ==========================================
-        const GEMINI_DIRECT_KEY = "AQ.Ab8RN6JXhCglnu3Lp39Dy85x4Gz1SGs9b0TD2EJpYCpqtMTj4g";
-
         window.sendToBackend = async function() {
             if (currentTargetKcal <= 0) {
                 alert("กรุณาเลือกเป้าหมายพลังงาน (Target Kcal) ก่อนครับ");
@@ -1002,27 +997,21 @@
 
             let mealPlanResult = null;
 
-            // 1. เรียกใช้งาน Gemini 3.6 โดยตรงจากเบราว์เซอร์ (รวดเร็ว 1-2 วินาที + เมนูเปลี่ยนใหม่ทุกครั้ง)
+            // 1. ลองเรียกผ่าน Google Apps Script Backend (ปลอดภัย เพราะ API Key ถูกซ่อนไว้ที่ฝั่ง Server)
             try {
-                mealPlanResult = await callGeminiDirectMealPlan(currentTargetKcal, targetMacros, selectedPortions, profile);
-            } catch (errDirect) {
-                console.warn("Direct Gemini call failed, trying GAS:", errDirect);
-                // 2. ถ้า Direct ไม่ผ่าน ให้ลองเรียกผ่าน Google Apps Script
-                try {
-                    const gasUrl = `${GAS_API_URL}?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
-                    const response = await fetch(gasUrl, { method: 'GET' });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.status === 'success' && data.meal_plan) {
-                            mealPlanResult = data.meal_plan;
-                        }
+                const gasUrl = `${GAS_API_URL}?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
+                const response = await fetch(gasUrl, { method: 'GET' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success' && data.meal_plan) {
+                        mealPlanResult = data.meal_plan;
                     }
-                } catch(errGas) {
-                    console.warn("GAS call failed:", errGas);
                 }
+            } catch(errGas) {
+                console.warn("GAS AI call failed, using client-side Dietitian engine:", errGas);
             }
 
-            // 3. ถ้าไม่มีการเชื่อมต่อ AI ให้ใช้ Dynamic Dietitian Engine จัดสรรส่วนอาหารจริงแบบสุ่มเมนู
+            // 2. ใช้ระบบ Smart Dietitian Engine คำนวณและสุ่มจัดสำรับอาหารไทยตามโควต้า 100% (ปลอดภัย ไม่ต้องพึ่งพา API Key ที่หน้าบ้าน)
             if (!mealPlanResult) {
                 mealPlanResult = generateDynamicDietitianPlan(currentTargetKcal, targetMacros, exchangeData, profile);
             }
@@ -1030,74 +1019,6 @@
             if (btn) btn.disabled = false;
             renderAiMealPlan(mealPlanResult);
         };
-
-        async function callGeminiDirectMealPlan(targetKcal, macros, portions, profile) {
-            const prompt = `คุณคือนักกำหนดอาหารวิชาชีพ (Certified Dietitian)
-กรุณาจัดตารางอาหารไทย 1 วัน (เช้า, กลางวัน, อาหารว่างบ่าย, เย็น)
-เป้าหมายโภชนาการ:
-- ผู้รับบริการ: เพศ ${profile.gender === 'female' ? 'หญิง' : 'ชาย'}, อายุ ${profile.age} ปี, น้ำหนัก ${profile.weight} กก., ส่วนสูง ${profile.height} ซม.
-- พลังงานเป้าหมาย: ${Math.round(targetKcal)} kcal
-- สารอาหารหลัก: คาร์โบไฮเดรต ${macros.c} กรัม, โปรตีน ${macros.p} กรัม, ไขมัน ${macros.f} กรัม
-- โควต้าส่วนอาหาร (Food Exchange) ที่ผู้ใช้เลือกไว้ และต้องกระจายให้ครบ 100% ใน 4 มื้อ:
-${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส่วน, เนื้อสัตว์ 4 ส่วน, ผัก 3 ส่วน, ผลไม้ 3 ส่วน, ไขมัน 4 ส่วน'}
-
-กติกาการจัดเมนู:
-1. กระจายส่วนอาหาร (ข้าวแป้ง, เนื้อสัตว์, ผัก, ผลไม้, นม, ไขมัน) ลงใน 4 มื้อให้ครบถ้วนตามโควต้าที่ระบุข้างต้น
-2. คิดเมนูอาหารไทยที่หลากหลาย น่ารับประทาน เมนูไม่ซ้ำซากจำเจ มีทั้งต้ม ผัด แกง ทอด หรือยำที่เหมาะสม
-3. ทุกรายการอาหารในแต่ละมื้อ ต้องระบุฟิลด์ exchange_used ว่าใช้ส่วนอาหารใดกี่ส่วน เช่น 'ข้าวแป้ง 2 ส่วน, เนื้อสัตว์ 2 ส่วน, ผัก 1 ส่วน'
-
-ตอบกลับเป็น JSON ตามรูปแบบนี้เท่านั้น:
-{
-  "summary": "สรุปกลยุทธ์การจัดอาหารและความหลากหลายของเมนูวันนี้ สั้นๆ กระชับ",
-  "total_calculated": {"kcal": ${Math.round(targetKcal)}, "carb_g": ${macros.c}, "protein_g": ${macros.p}, "fat_g": ${macros.f}},
-  "meals": [
-    {
-      "meal_name": "มื้อเช้า",
-      "time": "07:00 - 08:30 น.",
-      "kcal": 450,
-      "items": [
-        {"name": "ชื่ออาหาร", "portion": "ปริมาณ เช่น ข้าวสวย 2 ทัพพี + ไข่ต้ม 1 ฟอง", "exchange_used": "ข้าวแป้ง 2 ส่วน, เนื้อสัตว์ 1 ส่วน", "kcal": 350, "note": "คำแนะนำ"}
-      ]
-    },
-    {
-      "meal_name": "มื้อกลางวัน",
-      "time": "12:00 - 13:00 น.",
-      "kcal": 600,
-      "items": [...]
-    },
-    {
-      "meal_name": "อาหารว่างบ่าย",
-      "time": "15:00 - 15:30 น.",
-      "kcal": 180,
-      "items": [...]
-    },
-    {
-      "meal_name": "มื้อเย็น",
-      "time": "18:00 - 19:00 น.",
-      "kcal": 500,
-      "items": [...]
-    }
-  ]
-}`;
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_DIRECT_KEY}`;
-            const resp = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        temperature: 0.85
-                    }
-                })
-            });
-
-            if (!resp.ok) throw new Error(`Gemini status: ${resp.status}`);
-            const data = await resp.json();
-            const text = data.candidates[0].content.parts[0].text;
-            return JSON.parse(text);
-        }
 
         // ฟังก์ชันจัดสรรส่วนอาหารจริง 100% ตามที่ผู้ใช้เลือกในตาราง Food Exchange
         function generateDynamicDietitianPlan(targetKcal, macros, exchangeList, profile) {
