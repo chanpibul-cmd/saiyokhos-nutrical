@@ -610,6 +610,7 @@
             act_fat: document.getElementById('act_fat'), act_kcal: document.getElementById('act_kcal')
         };
 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwsBLt327msDByXJgNnQvNGvA2UM_TG-nP77EJXJMJx5ipb2O2EwSLupHnXV4S0a2Y1Jw/exec";
         let currentTargetKcal = 0;
         let targetMacros = { c:0, p:0, f:0 };
         let globalFoodItems = [];
@@ -777,7 +778,7 @@
                     allFoods1306 = await resp.json();
                 } else {
                     // Fallback to Google Apps Script
-                    let gasResp = await fetch("https://script.google.com/macros/s/AKfycbwsBLt327msDByXJgNnQvNGvA2UM_TG-nP77EJXJMJx5ipb2O2EwSLupHnXV4S0a2Y1Jw/exec?action=foods");
+                    let gasResp = await fetch(`${GAS_API_URL}?action=foods`);
                     let gasData = await gasResp.json();
                     if (gasData.foods) allFoods1306 = gasData.foods;
                 }
@@ -1008,7 +1009,7 @@
                 console.warn("Direct Gemini call failed, trying GAS:", errDirect);
                 // 2. ถ้า Direct ไม่ผ่าน ให้ลองเรียกผ่าน Google Apps Script
                 try {
-                    const gasUrl = `https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
+                    const gasUrl = `${GAS_API_URL}?action=generate_meal_plan&target_kcal=${currentTargetKcal}&carb=${targetMacros.c}&protein=${targetMacros.p}&fat=${targetMacros.f}&gender=${profile.gender}&age=${profile.age}&weight=${profile.weight}&height=${profile.height}&portions=${encodeURIComponent(selectedPortions.join(', '))}`;
                     const response = await fetch(gasUrl, { method: 'GET' });
                     if (response.ok) {
                         const data = await response.json();
@@ -1528,7 +1529,7 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
 
         window.fetchDataFromGAS = async function() {
             try {
-                const url = "https://script.google.com/macros/s/AKfycbyYxF17yE0v_lkElkoygqGwoWS6gcX7PgN1YicpOXDbQBYa89retjKakNwyjkrcZfW1/exec";
+                const url = GAS_API_URL;
                 const response = await fetch(url);
                 const text = await response.text();
                 
@@ -1677,7 +1678,5 @@ ${portions.length > 0 ? portions.join('\n') : '- ข้าวแป้ง 6 ส�
             console.error(err);
         }
     </script>
-</body>
-</html>
 </body>
 </html>
